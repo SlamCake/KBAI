@@ -3,6 +3,10 @@ package kbai;
 import java.util.ArrayList;
 
 public class SemanticNetRelationship {
+	//private SemanticNetNode sourceNode;
+	//private SemanticNetNode destinationNode;
+	private String sourceStateName;
+	private String destinationStateName;
 	private String sourceNodeName;
 	private String destinationNodeName;
 	private String sourceNodeLabel;
@@ -10,7 +14,7 @@ public class SemanticNetRelationship {
 	private Object sourceNodeValue;
 	private Object destinationNodeValue;
 	private String attribute;
-	private String pruningDirectives;
+	private String transformationSpecification;
 	//private ArrayList<String> postConditions;
 	//private ArrayList<String> postConditions;
 	
@@ -69,11 +73,39 @@ public class SemanticNetRelationship {
 	public void setDestinationNodeLabel(String destinationNodeLabel) {
 		this.destinationNodeLabel = destinationNodeLabel;
 	}
-	public String getPruningDirective() {
-		return pruningDirectives;
+	public String getTransformationSpecification() {
+		return transformationSpecification;
 	}
-	public void setPruningDirective(String pruningDirectives) {
-		this.pruningDirectives = pruningDirectives;
+	public void setTransformationSpecification(String transformationSpecification) {
+		this.transformationSpecification = transformationSpecification;
 	}
+	public String getDestinationStateName() {
+		return destinationStateName;
+	}
+	public void setDestinationStateName(String destinationStateName) {
+		this.destinationStateName = destinationStateName;
+	}
+	public String getSourceStateName() {
+		return sourceStateName;
+	}
+	public String toString() {
+		String snrString = this.getSourceStateName()+"\t"+this.getSourceNodeName()+"\t"+this.getSourceNodeLabel()+"\t"+this.getSourceNodeValue()+"\t"+this.getDestinationStateName()+"\t"+this.getDestinationNodeLabel()+"\t"+this.getDestinationNodeName()+"\t"+this.getDestinationNodeValue()+"\t"+this.getAttribute()+"\t"+this.getTransformationSpecification();
+		return snrString;
+	}
+	public void setSourceStateName(String sourceStateName) {
+		this.sourceStateName = sourceStateName;
+	}
+	/*public SemanticNetNode getSourceNode() {
+		return sourceNode;
+	}
+	public void setSourceNode(SemanticNetNode sourceNode) {
+		this.sourceNode = sourceNode;
+	}
+	public SemanticNetNode getDestinationNode() {
+		return destinationNode;
+	}
+	public void setDestinationNode(SemanticNetNode destinationNode) {
+		this.destinationNode = destinationNode;
+	}*/
 
 }

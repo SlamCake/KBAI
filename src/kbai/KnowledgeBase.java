@@ -16,6 +16,7 @@ public class KnowledgeBase {
 	//overlaps
 	//inside
 
+    public static HashMap<String, AttributeMetaData> attributeMetaDataMap = new HashMap<String, AttributeMetaData>();
     public static HashMap<String, Object> sizeMap = new HashMap<String, Object>();
     public static HashMap<String, Object> widthMap = new HashMap<String, Object>();
     public static HashMap<String, Object> heightMap = new HashMap<String, Object>();
@@ -67,7 +68,42 @@ public class KnowledgeBase {
     	attributeMap.put("height", heightMap);
     	attributeMap.put("alignment", alignmentMap);
     	attributeMap.put("fill", fillMap);
-	}
-        
 
+    	//may need to update knowledge base for new attributes if they are discovered otherwise it will crash...
+    	attributeMetaDataMap.put("shape", new AttributeMetaData(false, true, false));
+    	attributeMetaDataMap.put("angle", new AttributeMetaData(false, true, false));
+    	attributeMetaDataMap.put("size", new AttributeMetaData(false, true, false));
+    	attributeMetaDataMap.put("width", new AttributeMetaData(false, true, false));
+    	attributeMetaDataMap.put("height", new AttributeMetaData(false, true, false));
+    	attributeMetaDataMap.put("alignment", new AttributeMetaData(false, true, false));
+    	attributeMetaDataMap.put("fill", new AttributeMetaData(false, true, false));
+    	attributeMetaDataMap.put("left-of", new AttributeMetaData(true, false, false));
+    	attributeMetaDataMap.put("above", new AttributeMetaData(true, false, false));
+    	attributeMetaDataMap.put("overlaps", new AttributeMetaData(true, false, false));
+    	attributeMetaDataMap.put("inside", new AttributeMetaData(true, false, false));
+		//left-of
+		//above
+		//overlaps
+		//inside
+	}
+}
+class AttributeMetaData {
+	private boolean isRelative;
+	private boolean isNominal;
+	private boolean isNumerical;
+		public AttributeMetaData(boolean isRelative, boolean isNominal, boolean isNumerical)
+		{
+			this.isRelative = isRelative;
+			this.isNominal = isNominal;
+			this.isNumerical = isNumerical;
+		}
+		public boolean isNumerical() {
+			return isNumerical;
+		}
+		public boolean isNominal() {
+			return isNominal;
+		}
+		public boolean isRelative() {
+			return isRelative;
+		}
 }
