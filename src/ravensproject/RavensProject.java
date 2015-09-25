@@ -64,7 +64,7 @@ public class RavensProject {
             setResults.println("Set,Correct,Incorrect,Skipped");
             for(ProblemSet set : sets) {
                 for(RavensProblem problem : set.getProblems()) {            // Your agent will solve one problem at a time.
-                    try {
+                  //  try {
                         problem.setAnswerReceived(agent.Solve(problem));    // The problem will be passed to your agent as a RavensProblem object as a parameter to the Solve method
                                                                             // Your agent should return its answer at the conclusion of the execution of Solve.
                                                                             // Note that if your agent makes use of RavensProblem.checkAnswer to check its answer, the answer passed to checkAnswer() will be used.
@@ -72,10 +72,10 @@ public class RavensProject {
                                                                             // If your agent encounters an error before giving an answer, the question will be counted as Skipped.
                         
                         results.println(problem.getName() + "," + problem.getGivenAnswer() + "," + problem.getCorrect() + "," + problem.checkAnswer(0));
-                    } catch(Exception ex) {
-                        System.out.println("Error encountered in " + problem.getName());
-                        results.println(problem.getName() + "," + problem.getGivenAnswer() + ",Error," + problem.checkAnswer(0));
-                    }
+                   // } catch(Exception ex) {
+                    //    System.out.println("Error encountered in " + problem.getName());
+                     //   results.println(problem.getName() + "," + problem.getGivenAnswer() + ",Error," + problem.checkAnswer(0));
+                    //}
                 }
                 setResults.println(set.getName() + "," + set.getTotal("Correct") + "," + set.getTotal("Incorrect") + "," + set.getTotal("Skipped"));
             }

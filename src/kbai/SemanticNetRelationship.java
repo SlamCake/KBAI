@@ -1,6 +1,11 @@
 package kbai;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SemanticNetRelationship {
 	//private SemanticNetNode sourceNode;
@@ -14,6 +19,9 @@ public class SemanticNetRelationship {
 	private Object sourceNodeValue;
 	private Object destinationNodeValue;
 	private String attribute;
+	private boolean isNull;
+	private String nullType;
+	private int cost;
 	private String transformationSpecification;
 	//private ArrayList<String> postConditions;
 	//private ArrayList<String> postConditions;
@@ -21,6 +29,11 @@ public class SemanticNetRelationship {
 	public SemanticNetRelationship(String node1, String node2, String attr) {
 		sourceNodeName = node1;
 		destinationNodeName = node2;
+		this.setNull(false);
+	}
+	public SemanticNetRelationship(String nullType) {
+		this.setNull(true);
+		this.setNullType(nullType);
 	}
 	public SemanticNetRelationship() {
 		// TODO Auto-generated constructor stub
@@ -95,6 +108,134 @@ public class SemanticNetRelationship {
 	public void setSourceStateName(String sourceStateName) {
 		this.sourceStateName = sourceStateName;
 	}
+	
+	public int calculateSNRSimilarity(SemanticNetRelationship snr)
+	{
+		int transformationSimilarity = 0;
+			    
+		Set<String> thisTransSpecSet = new HashSet<String>(Arrays.asList(this.getTransformationSpecification()));
+		Set<String> snrTransSpecSet = new HashSet<String>(Arrays.asList(snr.getTransformationSpecification()));
+		Set<String> similaritiesTransSpecSet = new HashSet<String>(thisTransSpecSet);
+		Set<String> differencesTransSpecSet = new HashSet<String>(thisTransSpecSet);
+		similaritiesTransSpecSet.retainAll(snrTransSpecSet);
+		differencesTransSpecSet.removeAll(snrTransSpecSet);
+		transformationSimilarity += similaritiesTransSpecSet.size() - differencesTransSpecSet.size();
+
+		return transformationSimilarity;
+	}
+
+	public static ArrayList<SNRSimilarityRecord> getSnrSimilarityRecords(
+			HashSet<SemanticNetRelationship> sSnrSet,
+			HashSet<SemanticNetRelationship> dSnrSet) 
+	{
+		ArrayList<SNRSimilarityRecord> snrSimilarityRecords = new ArrayList<SNRSimilarityRecord>();
+		for(SemanticNetRelationship ssnr : sSnrSet)
+		{
+			for(SemanticNetRelationship dsnr : dSnrSet)
+			{
+				snrSimilarityRecords.add(new SNRSimilarityRecord(ssnr, dsnr));
+			}
+		}
+		return snrSimilarityRecords;
+	}
+	public static HashMap<SemanticNetRelationship, SemanticNetRelationship> populateNullSNRs(
+			HashSet<SemanticNetRelationship> sSnrSet,
+			HashSet<SemanticNetRelationship> dSnrSet,
+			HashMap<SemanticNetRelationship, SemanticNetRelationship> snrMappings) 
+			{
+
+		// populate null-prior SNRs
+		
+		for(SemanticNetRelationship snr : sSnrSet)
+		{
+			if(!snrMappings.containsKey(snr))
+			{
+				snrMappings.put(snr, new SemanticNetRelationship("posterior"));
+			}
+		}
+		// populate null-posterior SNRs
+		for(SemanticNetRelationship snr : dSnrSet)
+		{
+			if(!snrMappings.containsValue(snr))
+			{
+				snrMappings.put(new SemanticNetRelationship("prior"), snr);
+			}
+		}
+		return snrMappings;
+	}
+
+	public static HashMap<SemanticNetRelationship, SemanticNetRelationship> mapSimilarRelationships(ArrayList<SNRSimilarityRecord> SNRSList) {
+		// Find node with highest similarity value
+		HashMap<SemanticNetRelationship, SemanticNetRelationship> pairings = new HashMap<SemanticNetRelationship, SemanticNetRelationship>();
+		HashMap<SemanticNetRelationship, SNRSimilarityRecord> s_snr_2_snr_sr_map = new HashMap<SemanticNetRelationship, SNRSimilarityRecord>();
+		HashMap<SemanticNetRelationship, SNRSimilarityRecord>  d_snr_2_snr_sr_map = new HashMap<SemanticNetRelationship, SNRSimilarityRecord>();
+		//HashMap<String, String> S2DMap = new HashMap<String, String>();
+		//HashMap<String, String> D2SMap = new HashMap<String, String>();
+		// SemanticNetNode maxSimilarityNode = null;
+	
+		for (SNRSimilarityRecord snr_sr : SNRSList) 
+		{
+			//SemanticNetNode sNode = s1.getNodeByName(nsr.getSourceNodeName());
+			//SemanticNetNode dNode = s2.getNodeByName(nsr.getDestinationNodeName());
+			if(!pairings.containsKey(snr_sr.getSourceSNR()) && !pairings.containsValue(snr_sr.getDestinationSNR()))
+			{
+				pairings.put(snr_sr.getSourceSNR(), snr_sr.getDestinationSNR());
+				s_snr_2_snr_sr_map.put(snr_sr.getSourceSNR(), snr_sr);
+				d_snr_2_snr_sr_map.put(snr_sr.getDestinationSNR(), snr_sr);
+				//S2DMap.put(nsr.getSourceNodeName(), nsr.getDesinationNodeName());
+				//D2SMap.put(nsr.getDesinationNodeName(), nsr.getSourceNodeName());
+			}
+			else if (pairings.containsKey(snr_sr.getSourceSNR())) // risk of redundantly mapping same source node
+			{
+				
+				//pairings.put(new SemanticNetRelationship("prior"), snr.getDestinationSNR());
+				SNRSimilarityRecord prior_snr_sr = s_snr_2_snr_sr_map.get(snr_sr.getSourceSNR());
+				//SemanticNetRelationship priorDSNR = pairings.get(snr.getDestinationSNR());
+				//SemanticNetRelationship priorSSNR = pairings.get(snr.getSourceSNR());
+				//SemanticNetNode priorDNode = s2.getNodeByName(priorNsr.getDestinationNodeName());
+				if(snr_sr.similarity > prior_snr_sr.similarity)
+				{
+					pairings.remove(prior_snr_sr.getSourceSNR());
+					s_snr_2_snr_sr_map.remove(prior_snr_sr.getSourceSNR());
+					d_snr_2_snr_sr_map.remove(prior_snr_sr.getDestinationSNR());
+					
+					pairings.put(snr_sr.getSourceSNR(), snr_sr.getDestinationSNR());
+					s_snr_2_snr_sr_map.put(snr_sr.getSourceSNR(), snr_sr);
+					d_snr_2_snr_sr_map.put(snr_sr.getDestinationSNR(), snr_sr);
+					/*if(sNSRMap.size() == s1.getNodes().size())
+					{
+						pairings.put((, value)
+					}*/
+				}
+				else if(snr_sr.similarity > prior_snr_sr.similarity)
+				{
+					//Log These Cases...
+				}
+				
+			}
+			else // risk of redundantly mapping same destination node
+			{
+				//pairings.put( snr.getSourceSNR(), new SemanticNetRelationship("posterior"));
+			
+				SNRSimilarityRecord prior_snr_sr = d_snr_2_snr_sr_map.get(snr_sr.getDestinationSNR());
+				if(snr_sr.similarity > prior_snr_sr.similarity)
+				{
+					pairings.remove(prior_snr_sr.getSourceSNR());
+					s_snr_2_snr_sr_map.remove(prior_snr_sr.getSourceSNR());
+					d_snr_2_snr_sr_map.remove(prior_snr_sr.getDestinationSNR());
+					
+					pairings.put(snr_sr.getSourceSNR(), snr_sr.getDestinationSNR());
+					s_snr_2_snr_sr_map.put(snr_sr.getSourceSNR(), snr_sr);
+					d_snr_2_snr_sr_map.put(snr_sr.getDestinationSNR(), snr_sr);
+				}
+				else if(snr_sr.similarity > prior_snr_sr.similarity)
+				{
+					//Log These Cases...
+				}
+			}
+		}
+		return pairings;
+	}
 	/*public SemanticNetNode getSourceNode() {
 		return sourceNode;
 	}
@@ -107,5 +248,93 @@ public class SemanticNetRelationship {
 	public void setDestinationNode(SemanticNetNode destinationNode) {
 		this.destinationNode = destinationNode;
 	}*/
+	public int getCost() {
+		return cost;
+	}
+	public void setCost(int cost) {
+		this.cost = cost;
+	}
+	public String getNullType() {
+		return nullType;
+	}
+	private void setNullType(String nullType) {
+		this.nullType = nullType;
+	}
+	public boolean isNull() {
+		return isNull;
+	}
+	private void setNull(boolean isNull) {
+		this.isNull = isNull;
+	}
 
 }
+
+class SNRSimilarityRecord {
+	int quality;
+	int similarity;
+	int difference;
+	HashSet<String> similarities;
+	HashSet<String> differences;
+	private SemanticNetRelationship sSNR;
+	private SemanticNetRelationship dSNR;
+
+	public SNRSimilarityRecord(SemanticNetRelationship sSNR, SemanticNetRelationship dSNR) {
+		this.sSNR = sSNR;
+		this.dSNR = dSNR;
+		this.similarity = this.calculateSimilarity(sSNR, dSNR);
+	}
+
+	public int getSimilarity() {
+		return similarity;
+	}
+	public int getQuality() {
+		return quality;
+	}
+	public int getNumDifference() {
+		return difference;
+	}
+	public SemanticNetRelationship getSourceSNR() {
+		return this.sSNR;
+	}
+	public SemanticNetRelationship getDestinationSNR() {
+		return this.dSNR;
+	}
+	public int calculateSimilarity(SemanticNetRelationship sSNR2, SemanticNetRelationship dSNR2) {
+		int similarity = 0;
+
+	    Set<String> sTransSpecSet = new HashSet<String>(Arrays.asList(this.sSNR.getTransformationSpecification()));
+	    Set<String> dTransSpecSet = new HashSet<String>(Arrays.asList(this.dSNR.getTransformationSpecification()));
+	    Set<String> similaritiesTransSpecSet = new HashSet<String>(sTransSpecSet);
+	    Set<String> differencesTransSpecSet = new HashSet<String>(sTransSpecSet);
+	    similaritiesTransSpecSet.retainAll(dTransSpecSet);
+	    differencesTransSpecSet.removeAll(dTransSpecSet);
+	    similarity += similaritiesTransSpecSet.size() - differencesTransSpecSet.size();
+	    
+	    this.difference = differencesTransSpecSet.size();
+	    this.quality = 1*(similaritiesTransSpecSet.size() / sTransSpecSet.size());
+	    this.similarities = new HashSet<String>(similaritiesTransSpecSet);
+	    this.differences = new HashSet<String>(differencesTransSpecSet);
+	    
+		return similarity;
+	}
+	
+	public String toString() {
+		return this.sSNR.getTransformationSpecification()+" : "+this.dSNR.getTransformationSpecification()+" "+this.similarity;
+	}
+}
+
+class SNRComparator implements Comparator<SNRSimilarityRecord>{
+    @Override
+    public int compare(SNRSimilarityRecord snr1, SNRSimilarityRecord snr2) {
+        if(snr1.getSimilarity() < snr2.getSimilarity()){
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+}
+
+
+
+
+

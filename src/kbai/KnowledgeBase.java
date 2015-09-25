@@ -1,6 +1,7 @@
 package kbai;
 
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class KnowledgeBase {
 
@@ -15,17 +16,48 @@ public class KnowledgeBase {
 	//above
 	//overlaps
 	//inside
+	
+	//state mappings
+    public static HashMap<String, Integer> name2SequenceMap = new HashMap<String, Integer>();
+	public static HashMap<Integer, String> sequence2NameMap = new HashMap<Integer, String>();
 
+    //attribute mappings
     public static HashMap<String, AttributeMetaData> attributeMetaDataMap = new HashMap<String, AttributeMetaData>();
     public static HashMap<String, Object> sizeMap = new HashMap<String, Object>();
     public static HashMap<String, Object> widthMap = new HashMap<String, Object>();
     public static HashMap<String, Object> heightMap = new HashMap<String, Object>();
     public static HashMap<String, Object> alignmentMap = new HashMap<String, Object>();
     public static HashMap<String, Object> fillMap = new HashMap<String, Object>();
+    public static HashSet<String> relativeAttributes = new HashSet<String>();
     
     public static HashMap<String, HashMap<String, Object>> attributeMap = new HashMap<String, HashMap<String,Object>>();
 
     public static void initialize() {
+    	
+    	relativeAttributes.add("left-of");
+    	relativeAttributes.add("above");
+    	relativeAttributes.add("inside");
+    	relativeAttributes.add("overlaps");
+
+    	name2SequenceMap.put("A", 1);
+    	name2SequenceMap.put("B", 2);
+    	name2SequenceMap.put("C", 3);
+    	name2SequenceMap.put("D", 4);
+    	name2SequenceMap.put("E", 5);
+    	name2SequenceMap.put("F", 6);
+    	name2SequenceMap.put("H", 7);
+    	name2SequenceMap.put("I", 8);
+    	name2SequenceMap.put("J", 9);
+    	name2SequenceMap.put("K", 10);
+    	
+		sequence2NameMap.put(1, "A");
+    	sequence2NameMap.put(2, "B");
+    	sequence2NameMap.put(3, "C");
+    	sequence2NameMap.put(4, "D");
+    	sequence2NameMap.put(5, "E");
+    	sequence2NameMap.put(6, "F");
+    	sequence2NameMap.put(7, "G");
+    	sequence2NameMap.put(8, "H");
     	
     	sizeMap.put("huge", (Integer)6);
     	sizeMap.put("very large", (Integer)5);
@@ -89,19 +121,19 @@ public class KnowledgeBase {
 }
 class AttributeMetaData {
 	private boolean isRelative;
-	private boolean isNominal;
+	private boolean isDiscrete;
 	private boolean isNumerical;
-		public AttributeMetaData(boolean isRelative, boolean isNominal, boolean isNumerical)
+		public AttributeMetaData(boolean isRelative, boolean isDiscrete, boolean isNumerical)
 		{
 			this.isRelative = isRelative;
-			this.isNominal = isNominal;
+			this.isDiscrete = isDiscrete;
 			this.isNumerical = isNumerical;
 		}
 		public boolean isNumerical() {
 			return isNumerical;
 		}
-		public boolean isNominal() {
-			return isNominal;
+		public boolean isDiscrete() {
+			return isDiscrete;
 		}
 		public boolean isRelative() {
 			return isRelative;

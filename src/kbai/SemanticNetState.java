@@ -1,8 +1,12 @@
 package kbai;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
@@ -12,12 +16,19 @@ import ravensproject.RavensProblem;
 
 public class SemanticNetState {
 	private String name;
+	private int sequence;
 	//initialize these to avoid ClassNotLoaded exception...
     private HashMap<String, SemanticNetNode> nodes = new HashMap<String, SemanticNetNode>();
     private String[][] xyNodeSpace;
     private String[] xNodeSpace;
     private String[] yNodeSpace;
     private String[] iNodeSpace;
+    private String[] oNodeSpace;
+    private HashSet<String> xNodeValues = new HashSet<String>();
+    private HashSet<String> yNodeValues = new HashSet<String>();
+    private HashSet<String> iNodeValues = new HashSet<String>();
+    private HashSet<String> oNodeValues = new HashSet<String>();
+    private HashMap<String, SemanticNetRelationship> relativeRelationships = new HashMap<String, SemanticNetRelationship>();
     private HashMap<String, SemanticNetRelationship> sourceRelationships = new HashMap<String, SemanticNetRelationship>();
     private HashMap<String, SemanticNetRelationship> destinationRelationships = new HashMap<String, SemanticNetRelationship>();
     private boolean left_of;
@@ -31,8 +42,17 @@ public class SemanticNetState {
 	    {
     		//Verify that getName() uniqueness works as expected.
     		SemanticNetNode snn = new SemanticNetNode(ro);
+    		snn.setStateName(this.getName());
 	    	this.nodes.put(ro.getName(), snn);
 	    }
+    	if(Utilities.isNumeric(rf.getName()))
+    	{
+    		this.setSequence(Integer.parseInt(rf.getName()));
+    	}
+    	else
+    	{
+        	this.setSequence(KnowledgeBase.name2SequenceMap.get(rf.getName()));
+    	}
     	setName(rf.getName());
     	
     	//determine if positioning is relevant...
@@ -45,18 +65,22 @@ public class SemanticNetState {
     		if(n.getAttributes().containsKey("left-of"))
     		{
     			this.left_of = true;
+    			this.xNodeValues.add(n.getAttributes().get("left-of"));
     		}
     		if(n.getAttributes().containsKey("above"))
     		{
     			this.above = true;
+    			this.yNodeValues.add(n.getAttributes().get("above"));
     		}
     		if(n.getAttributes().containsKey("overlap"))
     		{
     			this.overlap = true;
+    			this.oNodeValues.add(n.getAttributes().get("overlap"));
     		}
     		if(n.getAttributes().containsKey("inside"))
     		{
     			this.inside = true;
+    			this.iNodeValues.add(n.getAttributes().get("inside"));
     		}
     	}
 
@@ -70,19 +94,19 @@ public class SemanticNetState {
         	{
         		if(n.getAttributes().containsKey("left-of"))
         		{
-        			x = (nodes.size() -  n.getAttributes().get("left-of").split(",").length);
+        			x = ((nodes.size()-1) -  n.getAttributes().get("left-of").split(",").length);
         		}
         		else
         		{
-        			x = nodes.size();
+        			x = nodes.size()-1;
         		}
         		if(n.getAttributes().containsKey("above"))
         		{
-        			y = (nodes.size() -  n.getAttributes().get("above").split(",").length);
+        			y = ((nodes.size()-1) -  n.getAttributes().get("above").split(",").length);
         		}
         		else
         		{
-        			y = nodes.size();
+        			y = nodes.size()-1;
         		}
         		this.xyNodeSpace[x][y] = n.getName();
         		n.setxCoordinate(x);
@@ -93,17 +117,17 @@ public class SemanticNetState {
     	{
     		if(this.left_of)
     		{
-            	this.xyNodeSpace = new String[nodes.size()][0];
+            	this.xyNodeSpace = new String[nodes.size()][1];
             	
             	for(SemanticNetNode n : this.nodes.values())
             	{
             		if(n.getAttributes().containsKey("left-of"))
             		{
-            			x = (nodes.size() -  n.getAttributes().get("left-of").split(",").length);
+            			x = ((nodes.size()-1) -  n.getAttributes().get("left-of").split(",").length);
             		}
             		else
             		{
-            			x = nodes.size();
+            			x = nodes.size()-1;
             		}
             		this.xyNodeSpace[x][0] = n.getName();
             		n.setxCoordinate(x);
@@ -112,17 +136,17 @@ public class SemanticNetState {
     		}
     		else
     		{
-            	this.xyNodeSpace = new String[0][nodes.size()];
+            	this.xyNodeSpace = new String[1][nodes.size()];
 
             	for(SemanticNetNode n : this.nodes.values())
             	{
             		if(n.getAttributes().containsKey("left-of"))
             		{
-            			y = (nodes.size() -  n.getAttributes().get("left-of").split(",").length);
+            			y = ((nodes.size()-1) -  n.getAttributes().get("left-of").split(",").length);
             		}
             		else
             		{
-            			y = nodes.size();
+            			y = nodes.size()-1;
             		}
             		this.xyNodeSpace[0][y] = n.getName();
             		n.setxCoordinate(0);
@@ -146,17 +170,60 @@ public class SemanticNetState {
         		if(n.getAttributes().containsKey("inside"))
         		{
         			//position in arr is a measure of how many 'n' nested a particular node is...
-        			i = (nodes.size() -  n.getAttributes().get("inside").split(",").length);
+        			i = ((nodes.size()-1) -  n.getAttributes().get("inside").split(",").length);
+            		this.iNodeSpace[i] = n.getName();
+            		n.setiCoordinate(i);
+            		n.setyCoordinate(0);
         		}
         		else
         		{
+        		//	boolean nodeInvolved = false;
+        			for(String s : this.iNodeValues)
+        			{
+        				HashSet<String> valSet = new HashSet<String>(Arrays.asList(s.split(",")));
+        				if(valSet.contains(n.getName()))
+        				{
+        					
+                			i = nodes.size()-1;
+                    		this.iNodeSpace[i] = n.getName();
+                    		n.setiCoordinate(i);
+        				}
+        			}
         			//check if the current has other nodes which refer to it
         				//if yes, it can be modeled in an inside array. if no, it should be excluded from inside array
-        			i = nodes.size();
         		}
-        		this.iNodeSpace[i] = n.getName();
-        		n.setiCoordinate(i);
-        		n.setyCoordinate(0);
+        	}
+    	}
+    	
+		int o;
+    	if(this.overlap)
+    	{
+        	this.oNodeSpace = new String[nodes.size()];
+        	
+        	for(SemanticNetNode n : this.nodes.values())
+        	{
+        		if(n.getAttributes().containsKey("overlap"))
+        		{
+        			//position in arr is a measure of how many 'n' nested a particular node is...
+        			o = ((nodes.size()-1) -  n.getAttributes().get("inside").split(",").length);
+        		}
+        		else
+        		{
+        		//	boolean nodeInvolved = false;
+        			for(String s : this.oNodeValues)
+        			{
+        				HashSet<String> valSet = new HashSet<String>(Arrays.asList(s.split(",")));
+        				if(valSet.contains(n.getName()))
+        				{
+        					
+                			o = nodes.size()-1;
+                    		this.oNodeSpace[o] = n.getName();
+                    		n.setoCoordinate(o);
+        				}
+        			}
+        			//check if the current has other nodes which refer to it
+        				//if yes, it can be modeled in an inside array. if no, it should be excluded from inside array
+        		}
         	}
     	}
     	
@@ -192,8 +259,48 @@ public class SemanticNetState {
 		//this.nodes = nodes;
 	}
 
+	public int calculateAnalogicalSimilarityForState_Naive(SemanticNetState s2) {
+		//HashMap<SemanticNetRelationship, SemanticNetRelationship> snrPairs = new HashMap<SemanticNetRelationship, SemanticNetRelationship>();
+		
+		int stateAnalogicalSimilarity = 0;
+		//String stateAnalogicalFitnessKey = this.getName()+"_"+s2.getName();
+		//HashMap<String, Integer> stateAnalogicalSimilarity = new HashMap<String, Integer>();
+		//stateAnalogicalSimilarity.put(this.getName()+"_"+s2.getName(), 0);
+		HashMap<String, Integer> snrPairsSimilarity = new HashMap<String, Integer>();
+
+		//HashMap<SemanticNetState, SemanticNetState> statePairs = new HashMap<SemanticNetState, SemanticNetState>();
+		//HashMap<HashMap<SemanticNetState, SemanticNetState>, Integer> statePairsAnalogFitnessMap = new HashMap<HashMap<SemanticNetState, SemanticNetState>, Integer>();
+	
+		for(SemanticNetRelationship s1SNR : this.getDestinationRelationships().values())
+		{
+			for(SemanticNetRelationship s2SNR : s2.getDestinationRelationships().values())
+			{
+				if(s1SNR.getAttribute().equals(s2SNR.getAttribute()))
+				{
+					int similarity = s1SNR.calculateSNRSimilarity(s2SNR);
+					snrPairsSimilarity.put(s1SNR.getSourceNodeName()+"_"+s2SNR.getSourceNodeName()+"_"+s1SNR.getAttribute(), similarity);
+				}
+			}
+			String maxSNRSimilarityKey = Utilities.getKeyForMax(snrPairsSimilarity);
+			int maxSNRSimilarityValue = snrPairsSimilarity.get(maxSNRSimilarityKey);
+			//int curAnalogicalSimilarity = stateAnalogicalSimilarity.get(stateAnalogicalFitnessKey);
+			//stateAnalogicalSimilarity.put(stateAnalogicalFitnessKey, curAnalogicalSimilarity += maxSNRSimilarityValue);
+			stateAnalogicalSimilarity += maxSNRSimilarityValue;
+			
+		}
+
+		return stateAnalogicalSimilarity;
+	}
+
+	/*public int convertRelationshipsToSet(SemanticNetState s) {
+		s.getDestinationRelationships()
+		return 0;
+	}*/
 	public String getName() {
 		return name;
+	}
+	public SemanticNetNode getNodeByName(String nodeName) {
+		return this.getNodes().get(nodeName);
 	}
 
 	public void setName(String name) {
@@ -215,6 +322,22 @@ public class SemanticNetState {
 	public void setDestinationRelationships(
 			HashMap<String, SemanticNetRelationship> destinationRelationships) {
 		this.destinationRelationships = destinationRelationships;
+	}
+
+	public int getSequence() {
+		return sequence;
+	}
+
+	public void setSequence(int sequence) {
+		this.sequence = sequence;
+	}
+
+	public HashMap<String, SemanticNetRelationship> getRelativeRelationships() {
+		return relativeRelationships;
+	}
+
+	public void setRelativeRelationships(HashMap<String, SemanticNetRelationship> relativeRelationships) {
+		this.relativeRelationships = relativeRelationships;
 	}
 
 	/*for (Map.Entry<String, String> attributeEntry : o.getAttributes().entrySet())

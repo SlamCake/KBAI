@@ -11,6 +11,7 @@ import ravensproject.RavensObject;
 public class SemanticNetNode {
 	
 	private String name;
+	private String stateName;
 	private String type;
 	private String mapsTo;
 	private String mapsFrom;
@@ -18,9 +19,15 @@ public class SemanticNetNode {
 	private int xCoordinate;
 	private int yCoordinate;
 	private int iCoordinate;
-    private HashMap<String, String> attributes;
-    private HashMap<String, String> relativeAttributes;
-    private HashMap<String, String> nonRelativeAttributes;
+	private int oCoordinate;
+	
+    private HashMap<String, String> attributes = new HashMap<String, String>();
+    private HashMap<String, String> relativeAttributes = new HashMap<String, String>();
+    private HashMap<String, String> nonRelativeAttributes = new HashMap<String, String>();
+    
+    private HashMap<String, SemanticNetRelationship> relativeRelationships = new HashMap<String, SemanticNetRelationship>();
+    private HashMap<String, SemanticNetRelationship> sourceRelationships = new HashMap<String, SemanticNetRelationship>();
+    private HashMap<String, SemanticNetRelationship> destinationRelationships = new HashMap<String, SemanticNetRelationship>();
 
     public SemanticNetNode(RavensObject ro) 
     {
@@ -82,19 +89,14 @@ public class SemanticNetNode {
 		return this.getName();
 	}
 	
-	public int calculateSimilarity(SemanticNetNode n) {
+	public int calculateNonRelativeSimilarity(SemanticNetNode n) {
 		int similarity = 0;
-		
-	    Set<String> nRelValues = new HashSet<String>(n.getRelativeAttributes().values());
-	    Set<String> nRelAttributes = new HashSet<String>(n.getRelativeAttributes().keySet());
 	    
 	    Set<String> nNonRelValues = new HashSet<String>(n.getNonRelativeAttributes().values());
 	    Set<String> nNonRelAttributes = new HashSet<String>(n.getNonRelativeAttributes().keySet());
 	    
 	    Set<String> similarities;
 	    Set<String> differences;
-	    Set<String> relValues1;
-	    Set<String> relValues2;
 	   // Set<String> similarRelAttributes = new HashSet<String>(this.getRelativeAttributes().keySet());
 	    
 	   // Set<String> similaronRelValues = new HashSet<String>(this.getNonRelativeAttributes().values());
@@ -116,7 +118,20 @@ public class SemanticNetNode {
 	    similarities.retainAll(nNonRelValues);
 	    differences.removeAll(nNonRelValues);
 	    similarity += similarities.size() - differences.size();
-
+		
+		return similarity;
+	}
+	public int calculateRelativeSimilarity(SemanticNetNode n) {
+		int similarity = 0;
+		
+	    Set<String> nRelValues = new HashSet<String>(n.getRelativeAttributes().values());
+	    Set<String> nRelAttributes = new HashSet<String>(n.getRelativeAttributes().keySet());
+	    
+	    Set<String> similarities;
+	    Set<String> differences;
+	    Set<String> relValues1;
+	    Set<String> relValues2;
+	    
 	    //compare relative attributes
 	    similarities = new HashSet<String>(this.getRelativeAttributes().keySet());
 	    differences = new HashSet<String>(this.getRelativeAttributes().keySet());
@@ -139,13 +154,21 @@ public class SemanticNetNode {
 	    //build coordinate 2d matrix based on above/left of attrs...
 	    //test if prior position in 2d map is the same as posterior position...
 	    //creation v deletion v exchange v displacement...all should impact the 2d matrix differently...
+	    
+	    //must know if a displacement/exchange/creation/deletion has occoured PRIOR to evaluating
+	    //node fitness for relative values.
 	    for(Entry<String, String> e : n.getRelativeAttributes().entrySet())
 	    {
+    		String[] n2RelVal = e.getValue().split(",");
 	    	if(this.getRelativeAttributes().containsKey(e.getKey()))
 	    	{
 	    		//Search through NSRMap to quickly identify these without considering other relative attrs...
-	    		String[] relVal1 = this.getRelativeAttributes().get(e.getKey()).split(",");
-	    		String[] relVal2 = this.getRelativeAttributes().get(e.getKey()).split(",");
+	    		String[] n1RelVal = this.getRelativeAttributes().get(e.getKey()).split(",");
+	    		similarity += n1RelVal.length - Math.abs((n2RelVal.length - n1RelVal.length));
+	    	}
+	    	else
+	    	{
+	    		similarity -= n2RelVal.length;
 	    	}
 	    }
 		
@@ -214,6 +237,42 @@ public class SemanticNetNode {
 
 	public void setiCoordinate(int iCoordinate) {
 		this.iCoordinate = iCoordinate;
+	}
+
+	public void setoCoordinate(int oCoordinate) {
+		this.oCoordinate = oCoordinate;
+	}
+
+	public HashMap<String, SemanticNetRelationship> getRelativeRelationships() {
+		return relativeRelationships;
+	}
+
+	public void setRelativeRelationships(HashMap<String, SemanticNetRelationship> relativeRelationships) {
+		this.relativeRelationships = relativeRelationships;
+	}
+
+	public HashMap<String, SemanticNetRelationship> getSourceRelationships() {
+		return sourceRelationships;
+	}
+
+	public void setSourceRelationships(HashMap<String, SemanticNetRelationship> sourceRelationships) {
+		this.sourceRelationships = sourceRelationships;
+	}
+
+	public HashMap<String, SemanticNetRelationship> getDestinationRelationships() {
+		return destinationRelationships;
+	}
+
+	public void setDestinationRelationships(HashMap<String, SemanticNetRelationship> destinationRelationships) {
+		this.destinationRelationships = destinationRelationships;
+	}
+
+	public String getStateName() {
+		return stateName;
+	}
+
+	public void setStateName(String stateName) {
+		this.stateName = stateName;
 	}
 
 	/*for (Map.Entry<String, String> attributeEntry : o.getAttributes().entrySet())

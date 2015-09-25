@@ -10,7 +10,7 @@ import ravensproject.RavensObject;
 
 public class RelationshipCBR {
 
-	private HashMap<String, String[]> attrParameters = new HashMap<String, String[]>();
+	/*private HashMap<String, String[]> attrParameters = new HashMap<String, String[]>();
 
     public RelationshipCBR() 
     {
@@ -125,6 +125,6 @@ public class RelationshipCBR {
    		}
 	    }
 		return intraStateRelationships;
-	}
+	}*/
 	
 }

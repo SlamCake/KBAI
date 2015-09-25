@@ -1,5 +1,6 @@
 package ravensproject;
 
+import kbai.AnswerCandidateAppraiser;
 import kbai.KBAILogging;
 import kbai.KnowledgeBase;
 import kbai.SemanticNetwork;
@@ -32,7 +33,6 @@ public class Agent {
      * 
      */
     public Agent() {
-        
     }
     /**
      * The primary method for solving incoming Raven's Progressive Matrices.
@@ -60,11 +60,74 @@ public class Agent {
      * @return your Agent's answer to this problem
      */
     public int Solve(RavensProblem problem) {
+
+    	String[] logArgs;
+    	/*if(KBAILogging.metrics)
+    	{
+    		KBAILogging.initializeMetrics();
+        	logArgs = new String[]{"Starting Memory Consumption"};
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}*/
+    	
+
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Knowledge Base Initializing", "start"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+    	
     	KnowledgeBase.initialize();
+
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Knowledge Base Initializing", "stop"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+    	
+    	//KBAILogging.updateLog("Performance", String[] adsf = {"performance", "start"});;
+    	
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Semantic Network Population", "start"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+    	
     	SemanticNetwork sn = new SemanticNetwork(problem);
-    	problem.getFigures();
     	
+
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Semantic Network Population", "stop"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+    	//KBAILogging.logQQTransformations(sn.getTransformationsByState());
+    	//KBAILogging.logQATransformations(sn.getTransformationsQA());
+    	//sn.getTransformationsByState().toString();
+
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Answer Selection", "start"};
+        	KBAILogging.updateLog("performance", logArgs);;
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
     	
-        return -1;
+    	AnswerCandidateAppraiser ACA = new AnswerCandidateAppraiser();
+
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Answer Selection", "stop"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+    	int answerCandidate = ACA.AppraiseAnswerCandidates(sn);
+    	//problem.getFigures();
+    	
+    	KBAILogging.writeAllMetricLogs();
+    	
+        return answerCandidate;
     }
 }

@@ -1,11 +1,14 @@
 package kbai;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import ravensproject.RavensFigure;
 import ravensproject.RavensObject;
@@ -14,6 +17,7 @@ import ravensproject.RavensProblem;
 public class SemanticNetwork {
 
 
+	private HashMap<SemanticNetNode, NodeSimilarityRecord> NSRMap = new HashMap<SemanticNetNode, NodeSimilarityRecord>();
     private String name;
     private String RPMType;
     private int rows;
@@ -37,8 +41,19 @@ public class SemanticNetwork {
 		return states;
 	}
 	
-	public ArrayList<SemanticNetState> getStateByName(String sn) {
-		return states.get;
+	public SemanticNetState getStateByName(String stateName) {
+		return stateMap.get(stateName);
+	}
+	public SemanticNetState getStateBySequence(int sequence) {
+		return stateMap.get(this.getStateByName(KnowledgeBase.sequence2NameMap.get(sequence)));
+	}
+	public SemanticNetState getStateByPosition(int row, int column) {
+		return stateMap.get(this.getStateByName(KnowledgeBase.sequence2NameMap.get(row*column+column)));
+	}
+	
+	public SemanticNetNode getNodeByName(String stateName, String nodeName) {
+		
+		return this.getStateByName(stateName).getNodes().get(nodeName);
 	}
 
 	public void setStates(ArrayList<SemanticNetState> states) {
@@ -64,6 +79,10 @@ public class SemanticNetwork {
 	public HashMap<String, HashMap<String, SemanticNetRelationship>> getTransformationsByState() {
 		return transformationsByState;
 	}
+	
+	public HashMap<String, SemanticNetRelationship> getTransformationsBySequence(int s) {
+		return transformationsByState.get(KnowledgeBase.sequence2NameMap.get(s));
+	}
 
 	public void setTransformationsByState(
 			HashMap<String, HashMap<String, SemanticNetRelationship>> transformationsByState) {
@@ -83,7 +102,7 @@ public class SemanticNetwork {
     //private HashMap<String, SemanticNetRelationship> transformationsQQ = new HashMap<String, SemanticNetRelationship>();
     //private HashMap<String, SemanticNetRelationship> transformationsQA = new HashMap<String, SemanticNetRelationship>();
     private ArrayList<SemanticNetState> states = new ArrayList<SemanticNetState>();
-    private HashMap<String, SemanticNetState> stateMap = new HashMap<String, SemanticNetState>;
+    private HashMap<String, SemanticNetState> stateMap = new HashMap<String, SemanticNetState>();
     private ArrayList<SemanticNetState> answerStates = new ArrayList<SemanticNetState>();
     private ArrayList<SemanticNetState> questionStates = new ArrayList<SemanticNetState>();
     
@@ -232,6 +251,49 @@ public class SemanticNetwork {
 		return RPMType;
 	}
 
+	public ArrayList<String> getTransformationRelationshipSpecs(int row, int column) {
+		ArrayList<String> specs = new ArrayList<String>();
+		for(SemanticNetRelationship snr : this.getTransformationRelationships(row, column))
+		{
+			specs.add(snr.getTransformationSpecification());
+		}
+		return specs;
+	}
+	
+	public ArrayList<String[]> getTransformationRelationshipSpecs(int rowStart, int rowEnd, int columnStart, int columnEnd) {
+		ArrayList<String[]> tempTRSpecs = new ArrayList<String[]>();
+		for(Collection<SemanticNetRelationship> snrCol : this.getTransformationRelationships(rowStart, rowEnd, columnStart, columnEnd))
+		{
+			String[] specs = new String[snrCol.size()];
+			int index = 0;
+			for(SemanticNetRelationship snr : snrCol)
+			{
+				specs[index] = snr.getTransformationSpecification();
+				index++;
+			}
+			tempTRSpecs.add(specs);
+		}
+		return tempTRSpecs;
+	}
+	
+	public ArrayList<Collection<SemanticNetRelationship>> getTransformationRelationships(int rowStart, int rowEnd, int columnStart, int columnEnd) {
+		ArrayList<Collection<SemanticNetRelationship>> tempRelationships = new ArrayList<Collection<SemanticNetRelationship>>();
+		for(int i = rowStart; i< rowEnd; i++)
+		{
+			for(int j = columnStart; j < columnEnd; j++)
+			{
+				tempRelationships.add(this.getTransformationRelationships(i, j));	
+			}
+		}
+		return tempRelationships;
+	}
+	public Collection<SemanticNetRelationship> getTransformationRelationships(int row, int column) {
+		return this.getQuestionState(row, column).getDestinationRelationships().values();
+	}
+	public SemanticNetState getQuestionState(int row, int column) {
+		return this.getQuestionStates().get(((row-1)*this.getColumns()+column));
+	}
+
 	public void setRPMType(String rPMType) {
 		RPMType = rPMType;
 	}
@@ -249,5 +311,13 @@ public class SemanticNetwork {
 
 	public void setRows(int rows) {
 		this.rows = rows;
+	}
+
+	public HashMap<SemanticNetNode, NodeSimilarityRecord> getNSRMap() {
+		return NSRMap;
+	}
+
+	public void setNSRMap(HashMap<SemanticNetNode, NodeSimilarityRecord> nSRMap) {
+		NSRMap = nSRMap;
 	}
 }

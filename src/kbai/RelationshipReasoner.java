@@ -1,7 +1,9 @@
 package kbai;
 
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,9 +15,11 @@ import java.util.Set;
 
 import ravensproject.RavensObject;
 
+
 public class RelationshipReasoner {
 	private HashMap<String, SemanticNetRelationship> pairedNodeRelationships = new HashMap<String, SemanticNetRelationship>();
-	private HashMap<SemanticNetNode, NodeSimilarityRecord> NSRMap = new HashMap<SemanticNetNode, NodeSimilarityRecord>();
+	private static HashMap<String, NodeSimilarityRecord> NSRMap = new HashMap<String, NodeSimilarityRecord>();
+	private static ArrayList<NodeSimilarityRecord> NSRList = new ArrayList<NodeSimilarityRecord>();
 	private SemanticNetwork sn;
 	
 	public RelationshipReasoner(SemanticNetwork sn)
@@ -265,7 +269,7 @@ public class RelationshipReasoner {
 			String difference = String.valueOf(v2 - v1);
 			if(((v1 + 180)%360) == v2)
 			{
-				transformationSpecification = "angle_reflection_x&y";
+				transformationSpecification = "angle_reflection_x_y";
 			}
 			else if(((180 - v1)+360)%360 == v2)
 			{
@@ -373,14 +377,14 @@ public class RelationshipReasoner {
 			// test for direction of shift
 			// test for one or both directions
 			if (difference[0] == 1 && difference[1] == 1) {
-				transformationSpecification = "alignment_right&up";
+				transformationSpecification = "alignment_right_up";
 			} else if (difference[0] == 1 && difference[1] == -1) {
-				transformationSpecification = "alignment_right&!up";
+				transformationSpecification = "alignment_right_!up";
 
 			} else if (difference[0] == -1 && difference[1] == 1) {
-				transformationSpecification = "alignment_!right&up";
+				transformationSpecification = "alignment_!right_up";
 			} else if (difference[0] == -1 && difference[1] == 1) {
-				transformationSpecification = "alignment_!right&!up";
+				transformationSpecification = "alignment_!right_!up";
 			} else if (difference[0] == 1 && difference[1] == 0) {
 				transformationSpecification = "alignment_right";
 			} else if (difference[0] == -1 && difference[1] == 0) {
@@ -393,6 +397,7 @@ public class RelationshipReasoner {
 		}
 
 		snr.setTransformationSpecification(transformationSpecification);
+		snr.setCost(transformationSpecification.split("_").length);
 		return snr;
 	}
 
@@ -501,12 +506,30 @@ public class RelationshipReasoner {
 
 		// For each state, reason relationships between each mapping...
 
+    	String[] logArgs ;
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Evaluating Transformations Between Nodes", "start"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+
 		for (Entry<SemanticNetNode, SemanticNetNode> e : transformationNodeMappings
 				.entrySet()) {
 			transformationRelationships.putAll((compareNodes(e.getKey(),
 					e.getValue())));
 		}
+    	
 
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Evaluating Transformations Between Nodes", "stop"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+		
+
+		
 		for (SemanticNetRelationship snr : transformationRelationships.values()) {
 			snr.setSourceStateName(s1.getName());
 			snr.setDestinationStateName(s2.getName());
@@ -609,12 +632,54 @@ public class RelationshipReasoner {
 		// semanticNetState1.getNodes().size();
 
 		//this.NSRMap = new HashMap<SemanticNetNode, NodeSimilarityRecord>();
-		this.NSRMap.putAll((calculateSimilarities(semanticNetState1,
+		/*this.NSRMap.putAll((calculateSimilarities(semanticNetState1,
 				semanticNetState2)));
 		pairings.putAll(mapSimilarNodes(semanticNetState1, semanticNetState2,
-				this.NSRMap));
+				this.NSRMap));*/
+		
+		
+
+    	String[] logArgs ;
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Node Similarity Calculation", "start"};
+        	KBAILogging.updateLog("performance", logArgs);;
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+
+		calculateSimilarities(semanticNetState1, semanticNetState2);
+    	
+
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Node Similarity Calculation", "stop"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+    	
+
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Node Mapping", "start"};
+        	KBAILogging.updateLog("performance", logArgs);;
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+
+		pairings.putAll(mapSimilarNodes(semanticNetState1, semanticNetState2));
+    	
+
+    	if(KBAILogging.metrics)
+    	{
+        	logArgs = new String[]{"Node Mapping", "stop"};
+        	KBAILogging.updateLog("performance", logArgs);
+        	KBAILogging.updateLog("memory consumption", logArgs);
+    	}
+		
+		
+		
+		
 		// "delete-type" node pairings
-		if (semanticNetState1.getNodes().size() > semanticNetState2.getNodes()
+		/*if (semanticNetState1.getNodes().size() > semanticNetState2.getNodes()
 				.size()) {
 			pairings = processDeletedNodes(pairings);
 		}
@@ -622,7 +687,7 @@ public class RelationshipReasoner {
 		if (semanticNetState1.getNodes().size() < semanticNetState2.getNodes()
 				.size()) {
 			pairings = processSpawnedNodes(pairings);
-		}
+		}*/
 
 		// logic to deal with removals and creations...
 		// HashMap<SemanticNetNode, SemanticNetNode> deletions = new
@@ -647,44 +712,90 @@ public class RelationshipReasoner {
 	}
 
 	private static HashMap<SemanticNetNode, SemanticNetNode> mapSimilarNodes(
-			SemanticNetState semanticNetState1,
-			SemanticNetState semanticNetState2,
-			HashMap<SemanticNetNode, NodeSimilarityRecord> NSRMap) {
+			SemanticNetState s1,
+			SemanticNetState s2) {
 		// Find node with highest similarity value
 		HashMap<SemanticNetNode, SemanticNetNode> pairings = new HashMap<SemanticNetNode, SemanticNetNode>();
+		HashMap<String, NodeSimilarityRecord> sNSRMap = new HashMap<String, NodeSimilarityRecord>();
+		HashMap<String, NodeSimilarityRecord>  dNSRMap = new HashMap<String, NodeSimilarityRecord>();
+		//HashMap<String, String> S2DMap = new HashMap<String, String>();
+		//HashMap<String, String> D2SMap = new HashMap<String, String>();
 		// SemanticNetNode maxSimilarityNode = null;
 
-		for (SemanticNetNode n1 : semanticNetState1.getNodes().values()) {
-			// Fetches highest similarity value to n1...
-			int maxSimilarity = 0;
-			for (SemanticNetNode n2 : semanticNetState2.getNodes().values()) {
-				if (NSRMap.get(n1).getSimilarities().get(n2) > maxSimilarity) {
-					maxSimilarity = NSRMap.get(n1).getSimilarities().get(n2);
-					// maxSimilarityNode = n2;
+		for (NodeSimilarityRecord nsr : NSRList) 
+		{
+			SemanticNetNode sNode = s1.getNodeByName(nsr.getSourceNodeName());
+			SemanticNetNode dNode = s2.getNodeByName(nsr.getDestinationNodeName());
+			if(!pairings.containsKey(sNode)	&& !pairings.containsValue(dNode))
+			{
+				pairings.put(sNode, dNode);
+				sNSRMap.put(sNode.getName(), nsr);
+				dNSRMap.put(dNode.getName(), nsr);
+				//S2DMap.put(nsr.getSourceNodeName(), nsr.getDesinationNodeName());
+				//D2SMap.put(nsr.getDesinationNodeName(), nsr.getSourceNodeName());
+			}
+			else if (pairings.containsKey(s1.getNodeByName(nsr.getSourceNodeName()))) // risk of redundantly mapping same source node
+			{
+				NodeSimilarityRecord priorNsr = sNSRMap.get(sNode.getName());
+				SemanticNetNode priorDNode = s2.getNodeByName(priorNsr.getDestinationNodeName());
+				if(nsr.similarity > priorNsr.similarity)
+				{
+					pairings.remove(sNode);
+					sNSRMap.remove(sNode.getName());
+					dNSRMap.remove(priorDNode.getName());
+					
+					pairings.put(sNode, dNode);
+					sNSRMap.put(sNode.getName(), nsr);
+					dNSRMap.put(dNode.getName(), nsr);
+					/*if(sNSRMap.size() == s1.getNodes().size())
+					{
+						pairings.put((, value)
+					}*/
+				}
+				else if(nsr.similarity == priorNsr.similarity)
+				{
+					//Log These Cases...
+				}
+				
+			}
+			else // risk of redundantly mapping same destination node
+			{
+				NodeSimilarityRecord priorNsr = dNSRMap.get(dNode.getName());
+				SemanticNetNode priorSNode = s1.getNodeByName(priorNsr.getSourceNodeName());
+				if(nsr.similarity > priorNsr.similarity)
+				{
+					pairings.remove(priorNsr.getSourceNodeName());
+					sNSRMap.remove(priorSNode.getName());
+					dNSRMap.remove(dNode.getName());
+					
+					pairings.put(sNode, dNode);
+					sNSRMap.put(sNode.getName(), nsr);
+					dNSRMap.put(dNode.getName(), nsr);
+				}
+				else if(nsr.similarity == priorNsr.similarity)
+				{
+					//Log These Cases...
 				}
 			}
-
-			ArrayList<SemanticNetNode> maxSimilarityNodes = new ArrayList<SemanticNetNode>();
-			
-			// Find other nodes with similarity == maxSimilarity
-			for (SemanticNetNode n2 : semanticNetState2.getNodes().values()) {
-				if (NSRMap.get(n1).getSimilarities().get(n2) == maxSimilarity) {
-					maxSimilarityNodes.add(n2);
-				}
+		}
+		// populate delete nodes
+		for(SemanticNetNode n : s1.getNodes().values())
+		{
+			if(!pairings.containsKey(n))
+			{
+				pairings.put(n, new SemanticNetNode("delete"));
 			}
-
-			SemanticNetNode finalCandidateNode = null;
-			// If there is more than one similar node, identify the final
-			// candidate
-			if (maxSimilarityNodes.size() != 1) {
-				// currently choose first, must revise later...
-				finalCandidateNode = maxSimilarityNodes.get(0);
-			} else {
-				finalCandidateNode = maxSimilarityNodes.get(0);
+		}
+		// populate create nodes
+		for(SemanticNetNode n : s2.getNodes().values())
+		{
+			if(!pairings.containsValue(n))
+			{
+				pairings.put(new SemanticNetNode("create"), n);
 			}
-			pairings.put(n1, finalCandidateNode);
 		}
 		return pairings;
+	}
 
 		/*
 		 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! REFACTOR THIS
@@ -694,122 +805,82 @@ public class RelationshipReasoner {
 		 * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		 */
 
-	}
+	
 
-	private static HashMap<SemanticNetNode, NodeSimilarityRecord> calculateSimilarities(
+	private static void calculateSimilarities(
 			SemanticNetState semanticNetState1,
 			SemanticNetState semanticNetState2) {
-		HashMap<SemanticNetNode, NodeSimilarityRecord> NSRMap = new HashMap<SemanticNetNode, NodeSimilarityRecord>();
-		//HashMap<SemanticNetNode, HashMap<String, Integer>> similaritiesForNodes = new HashMap<SemanticNetNode, HashMap<String, Integer>>();
-		// Compare n1 to every node in semanticNetState, associate a similarity
-		// value with each node
+		NSRList.clear();
+		//NSRMap.clear();
 		for (SemanticNetNode n1 : semanticNetState1.getNodes().values()) {
 			HashMap<SemanticNetNode, Integer> similarity = new HashMap<SemanticNetNode, Integer>();
-			for (SemanticNetNode n2 : semanticNetState2.getNodes().values()) {
-				// consider attribute, value, and relationships to intra nodes
-				// (these should reinforce eachother)
-				Iterator<String> attrs1 = n2.getAttributes().keySet()
-						.iterator();
-				int similarityValue = 0;
-				while (attrs1.hasNext()) {
-					String attr = attrs1.next();
-
-					// Both nodes have same attribute
-					if (n1.getAttributes().containsKey(attr)) {
-						// +1 to similarity, this should be made more
-						// sophisticated later...
-						similarityValue = similarityValue + 1;
-
-						// same attribute has the same value
-						// !!!
-						// MUST BE REVISED TO HANDLE RELATIVE ATTRIBUTES!!!
-						// !!!
-						if (n1.getAttributes().get(attr)
-								.equals(n2.getAttributes().get(attr))) {
-							// +1 to similarity, this should be made more
-							// sophisticated later...
-							similarityValue = similarityValue + 1;
-							// pairedNodeRelationships.put(node1.getName()+","+node2.getName()+","+attr,
-							// reasonRelationship(node1, node2, attr));
-							// pairedNodeRelationships.put(node2.getName()+","+node1.getName()+","+attr,
-							// reasonRelationship(node2, node1, attr));
-						} else if (KnowledgeBase.attributeMetaDataMap.get(attr)
-								.isRelative()) {
-							// For now, assume if node attr/vals have the same
-							// number of comma separated values
-							// then they are 'similar'
-
-							int numberCSV1 = n1.getAttributes().get(attr)
-									.split(",").length;
-							int numberCSV2 = n2.getAttributes().get(attr)
-									.split(",").length;
-
-							if (numberCSV1 == numberCSV2) {
-								similarityValue = similarityValue + 1;
-							}
-							else
-							{
-								similarityValue = similarityValue - 1;
-							}
-
-						}
-						else
-						{
-							similarityValue = similarityValue - 1;
-						}
-						// pairedNodeRelationships.put(node1.getName()+","+node2.getName()+","+attr,
-						// reasonRelationship(node1, node2, attr));
-						// pairedNodeRelationships.put(node2.getName()+","+node1.getName()+","+attr,
-						// reasonRelationship(node2, node1, attr));
-					}
-					else
-					{
-						similarityValue = similarityValue - 2;
-					}
-
-				}
-				// consider meta reasoning too i.e. problems D-12
-
-				// consider planar subtraction to isolate what changes between
-				// figures.
-				similarity.put(n2, similarityValue);
+			for (SemanticNetNode n2 : semanticNetState2.getNodes().values()) 
+			{
+				//similarity.put(n2, n1.calculateNonRelativeSimilarity(n2));
+				NodeSimilarityRecord nsr = new NodeSimilarityRecord(n1.getName(), n2.getName(), semanticNetState1.getName(), n1.calculateNonRelativeSimilarity(n2), n1.calculateRelativeSimilarity(n2));
+				NSRList.add(nsr);
+				//NSRMap.put(nsr.getSourceNodeName()+"_"+nsr.getDestinationNodeName(), nsr);
 			}
-			NSRMap.put(n1, new NodeSimilarityRecord(n1.getName(),
-					semanticNetState1.getName(), similarity));
 		}
-		return NSRMap;
-
+		Collections.sort(NSRList, new NSRComparator());
 	}
 
-	private HashMap<SemanticNetNode, SemanticNetNode> processDeletedNodes(
+	/*private HashMap<SemanticNetNode, SemanticNetNode> processDeletedNodes(
 			HashMap<SemanticNetNode, SemanticNetNode> pairings) {
 		
 		HashMap<SemanticNetNode, SemanticNetNode> tempPairings = new HashMap<SemanticNetNode, SemanticNetNode>(pairings);
-		for (Entry<SemanticNetNode, SemanticNetNode> e1 : pairings.entrySet()) {
-			for (Entry<SemanticNetNode, SemanticNetNode> e2 : pairings
+		for (Entry<SemanticNetNode, SemanticNetNode> e1_1 : pairings.entrySet()) {
+			for (Entry<SemanticNetNode, SemanticNetNode> e1_2 : pairings
 					.entrySet()) {
 				//if the prior state node names are different AND posterior node names are the same...
 				//determine similarity of both w/ rspt to current node and choose the most similar...
 				//if both nodes are equally similar, choose the first node to be a delete node...
 				//may need to calculate and map all similarities as one step in the instance of many same nodes...
-				if (e1.getKey().getName() != e2.getKey().getName() && e1.getValue().getName() == e2.getValue().getName() && tempPairings.entrySet().contains(e1) && tempPairings.entrySet().contains(e2)) {
-					int n1Similarity = this.NSRMap.get(e1.getKey()).getSimilarities().get(e1.getValue());
-					int n2Similarity = this.NSRMap.get(e2.getKey()).getSimilarities().get(e2.getValue());
+				
+				//if both entries have DIFFERENT NODE KEYS and THE SAME NODE VALUES and temp node pairings
+				//DOES NOT have an entry for EITHER NODE KEY
+				if (e1_1.getKey().getName() != e1_2.getKey().getName() 
+						&& e1_1.getValue().getName() == e1_2.getValue().getName() 
+						&& tempPairings.entrySet().contains(e1_1) 
+						&& tempPairings.entrySet().contains(e1_2)) 
+				{
+					int n1Similarity = this.NSRMap.get(e1_1.getKey()).getSimilarities().get(e1_1.getValue());
+					int n2Similarity = this.NSRMap.get(e1_2.getKey()).getSimilarities().get(e1_2.getValue());
 					if(n1Similarity > n2Similarity)
 					{
-						tempPairings.remove(e2.getKey());
-						tempPairings.put(e2.getKey(), new SemanticNetNode("delete"));
+						tempPairings.remove(e1_2.getKey());
+						tempPairings.put(e1_2.getKey(), new SemanticNetNode("delete"));
 					}
 					else if(n2Similarity > n1Similarity)
 					{
-						tempPairings.remove(e1.getKey());
-						tempPairings.put(e1.getKey(), new SemanticNetNode("delete"));
+						tempPairings.remove(e1_1.getKey());
+						tempPairings.put(e1_1.getKey(), new SemanticNetNode("delete"));
 					}
-					else
+					else // both node pairings are equally similar...
 					{
-						//consider logging message for this case...
-						tempPairings.remove(e1.getKey());
-						tempPairings.put(e1.getKey(), new SemanticNetNode("delete"));
+						//log this situaiton...
+						
+						//determine which pair involves the least costly transformations, select this one...
+						HashMap<String, SemanticNetRelationship> e1_1Transformations = compareNodes(e1_1.getKey(), e1_1.getValue());
+						HashMap<String, SemanticNetRelationship> e1_2Transformations = compareNodes(e1_2.getKey(), e1_2.getValue());
+						int sumOfCosts1 = 0;
+						int sumOfCosts2 = 0;
+						for(SemanticNetRelationship snr : e1_1Transformations.values()){ sumOfCosts1 += snr.getCost(); }
+						for(SemanticNetRelationship snr : e1_2Transformations.values()){ sumOfCosts2 += snr.getCost(); }
+						if(sumOfCosts1 > sumOfCosts2)
+						{
+							tempPairings.remove(e1_1.getKey());
+							tempPairings.put(e1_1.getKey(), new SemanticNetNode("delete"));
+						}
+						else if(sumOfCosts2 > sumOfCosts2)
+						{
+							tempPairings.remove(e1_2.getKey());
+							tempPairings.put(e1_2.getKey(), new SemanticNetNode("delete"));
+						}
+						else // both node pairings have the same cost of transformations...
+						{
+							//log this situation...
+						}
 						
 					}
 					/*
@@ -827,10 +898,10 @@ public class RelationshipReasoner {
 					 * SemanticNetNode("delete")); } else { //advanced
 					 * similarity check between these nodes...? }
 					 */
-				}
-			}
-		}
-		return tempPairings;
+		//		}
+		//	}
+	//	}
+	//	return tempPairings;
 
 		/*
 		 * //"delete-type" pairings SemanticNetNode n1Prior = null;
@@ -851,9 +922,9 @@ public class RelationshipReasoner {
 		 * similarity check between these nodes...? } } else { pairings.put(n1,
 		 * finalCandidateNode); }
 		 */
-	}
+	//}
 
-	private static HashMap<SemanticNetNode, SemanticNetNode> processSpawnedNodes(
+	/*private static HashMap<SemanticNetNode, SemanticNetNode> processSpawnedNodes(
 			HashMap<SemanticNetNode, SemanticNetNode> pairings) {
 		ArrayList<SemanticNetNode> createNodes = new ArrayList<SemanticNetNode>(pairings.values());
 		for (Entry<SemanticNetNode, SemanticNetNode> e : pairings.entrySet()) {
@@ -865,7 +936,7 @@ public class RelationshipReasoner {
 			pairings.put(new SemanticNetNode("create"), c);
 		}
 		return pairings;
-	}
+	}*/
 
 	/*public HashMap<String, SemanticNetRelationship> getPairedNodeRelationships() {
 		return pairedNodeRelationships;
@@ -878,30 +949,51 @@ public class RelationshipReasoner {
 }
 
 class NodeSimilarityRecord {
-	HashMap<SemanticNetNode, Integer> similarities;
+	int similarity;
 	private String stateName;
-	private String nodeName;
+	private String sourceNodeName;
+	private String destinationNodeName;
+	private float quality;
+	private int rSimilarity;
+	private int nrSimilarity;
 
-	public NodeSimilarityRecord(String nodeName, String stateName,
-			HashMap<SemanticNetNode, Integer> similarities) {
-		this.similarities = similarities;
+	public NodeSimilarityRecord(String sourceNodeName, String destinationNodeName, String stateName, int nrSimilarity, int rSimilarity) {
+		this.nrSimilarity = nrSimilarity;
+		this.rSimilarity = rSimilarity;
 		this.stateName = stateName;
-		this.nodeName = nodeName;
+		this.sourceNodeName = sourceNodeName;
+		this.destinationNodeName = destinationNodeName;
+		this.similarity = rSimilarity+nrSimilarity;
 	}
 
-	public HashMap<SemanticNetNode, Integer> getSimilarities() {
-		return similarities;
+	public int getSimilarity() {
+		return similarity;
 	}
-
 	public String getStateName() {
 		return stateName;
 	}
 
-	public String getNodeName() {
-		return nodeName;
+	public String getSourceNodeName() {
+		return sourceNodeName;
+	}
+
+	public String getDestinationNodeName() {
+		return destinationNodeName;
 	}
 	
 	public String toString() {
-		return this.stateName+" : "+this.nodeName;
+		return this.stateName+" : "+this.sourceNodeName+" "+this.destinationNodeName+" "+this.similarity;
 	}
+}
+
+class NSRComparator implements Comparator<NodeSimilarityRecord>{
+ 
+    @Override
+    public int compare(NodeSimilarityRecord nsr1, NodeSimilarityRecord nsr2) {
+        if(nsr1.getSimilarity() < nsr2.getSimilarity()){
+            return 1;
+        } else {
+            return -1;
+        }
+    }
 }
