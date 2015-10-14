@@ -1,9 +1,5 @@
 package ravensproject;
 
-import kbai.AnswerCandidateAppraiser;
-import kbai.KBAILogging;
-import kbai.KnowledgeBase;
-import kbai.SemanticNetwork;
 
 // Uncomment these lines to access image processing.
 //import java.awt.Image;
@@ -125,8 +121,11 @@ public class Agent {
     	}
     	int answerCandidate = ACA.AppraiseAnswerCandidates(sn);
     	//problem.getFigures();
-    	
+
+    	if(KBAILogging.metrics)
+    	{
     	KBAILogging.writeAllMetricLogs();
+    	}
     	
         return answerCandidate;
     }

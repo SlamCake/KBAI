@@ -1,4 +1,4 @@
-package kbai;
+package ravensproject;
 
 
 import java.util.ArrayList;
@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-
-import ravensproject.RavensObject;
 
 
 public class RelationshipReasoner {
@@ -208,6 +206,12 @@ public class RelationshipReasoner {
 
 			snr.setSourceNodeName(node1.getName());
 			snr.setDestinationNodeName(node2.getName());
+			
+			snr.setSourcePositionSignature(node1.getRelativePositionSignature());
+			snr.setDestinationPositionSignature(node2.getRelativePositionSignature());
+			snr.setSourcePositionAttrs(node1.getRelativeAttributes());
+			snr.setDestinationPositionSignature(node2.getRelativePositionSignature());
+			snr.setDestinationPositionAttrs(node2.getRelativeAttributes());
 			//snr.setSourceNode(node1);
 			//snr.setDestinationNode(node2);
 			value1 = node1.getAttributes().get(attr);
@@ -222,10 +226,14 @@ public class RelationshipReasoner {
 			if(attr.equals(("create")))
 			{
 				snr.setDestinationNodeName(node2.getName());
+				snr.setDestinationPositionSignature(node2.getRelativePositionSignature());
+				snr.setDestinationPositionAttrs(node2.getRelativeAttributes());
 			}
 			else
 			{
 				snr.setSourceNodeName(node1.getName());
+				snr.setSourcePositionSignature(node1.getRelativePositionSignature());
+				snr.setSourcePositionAttrs(node1.getRelativeAttributes());
 			}
 		}
 
@@ -294,7 +302,7 @@ public class RelationshipReasoner {
 					value2);
 			int difference = destSize - sourceSize;
 			// growth
-			if (difference > 1) {
+			if (difference >= 1) {
 				// snr.gettransformationSpecifications().add("size_increase");
 				transformationSpecification = attr + "_increase_"
 						+ Integer.toString(difference);
@@ -824,6 +832,7 @@ public class RelationshipReasoner {
 				//NSRMap.put(nsr.getSourceNodeName()+"_"+nsr.getDestinationNodeName(), nsr);
 			}
 		}
+		//System.out.println(semanticNetState1.getName()+"_"+semanticNetState2.getName());
 		Collections.sort(NSRList, new NSRComparator());
 	}
 
@@ -994,8 +1003,12 @@ class NSRComparator implements Comparator<NodeSimilarityRecord>{
     public int compare(NodeSimilarityRecord nsr1, NodeSimilarityRecord nsr2) {
         if(nsr1.getSimilarity() < nsr2.getSimilarity()){
             return 1;
-        } else {
+        } else if(nsr1.getSimilarity() > nsr2.getSimilarity()){
             return -1;
+        }
+        else
+        {
+        	return 0;
         }
     }
 }

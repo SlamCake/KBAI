@@ -1,4 +1,4 @@
-package kbai;
+package ravensproject;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -9,10 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
-
-import ravensproject.RavensFigure;
-import ravensproject.RavensObject;
-import ravensproject.RavensProblem;
 
 public class SemanticNetState {
 	private String name;
@@ -30,6 +26,7 @@ public class SemanticNetState {
     private HashSet<String> yNodeValues = new HashSet<String>();
     private HashSet<String> iNodeValues = new HashSet<String>();
     private HashSet<String> oNodeValues = new HashSet<String>();
+    private HashMap<SemanticNetNode, SemanticNetNode> snnMappings = new HashMap<SemanticNetNode, SemanticNetNode>();
     private HashMap<String, SemanticNetRelationship> relativeRelationships = new HashMap<String, SemanticNetRelationship>();
     private HashMap<String, SemanticNetRelationship> sourceRelationships = new HashMap<String, SemanticNetRelationship>();
     private HashMap<String, SemanticNetRelationship> destinationRelationships = new HashMap<String, SemanticNetRelationship>();
@@ -54,6 +51,7 @@ public class SemanticNetState {
     	}
     	else
     	{
+    		//System.out.println(rf.getName());
         	this.setSequence(KnowledgeBase.name2SequenceMap.get(rf.getName()));
     	}
     	setName(rf.getName());
@@ -375,6 +373,26 @@ public class SemanticNetState {
 
 	public void setRelativeRelationships(HashMap<String, SemanticNetRelationship> relativeRelationships) {
 		this.relativeRelationships = relativeRelationships;
+	}
+
+	public HashMap<SemanticNetNode, SemanticNetNode> getSnnMappings() {
+		return snnMappings;
+	}
+
+	public void setSnnMappings(HashMap<SemanticNetNode, SemanticNetNode> snnMappings) {
+		this.snnMappings = snnMappings;
+	}
+
+	public SemanticNetNode getNodeByPositionSignature(
+			String destinationPositionSignature) {
+			for(SemanticNetNode snn : this.nodes.values())
+			{
+				if(snn.getRelativePositionSignature().equals(destinationPositionSignature))
+				{
+					return snn;
+				}
+			}
+		return null;
 	}
 
 	/*for (Map.Entry<String, String> attributeEntry : o.getAttributes().entrySet())

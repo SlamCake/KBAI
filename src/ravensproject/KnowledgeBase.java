@@ -1,4 +1,4 @@
-package kbai;
+package ravensproject;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,10 +47,8 @@ public class KnowledgeBase {
     	name2SequenceMap.put("D", 4);
     	name2SequenceMap.put("E", 5);
     	name2SequenceMap.put("F", 6);
-    	name2SequenceMap.put("H", 7);
-    	name2SequenceMap.put("I", 8);
-    	name2SequenceMap.put("J", 9);
-    	name2SequenceMap.put("K", 10);
+    	name2SequenceMap.put("G", 7);
+    	name2SequenceMap.put("H", 8);
     	
 		sequence2NameMap.put(1, "A");
     	sequence2NameMap.put(2, "B");

@@ -1,4 +1,4 @@
-package kbai;
+package ravensproject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,26 +43,46 @@ SemanticNetwork sn;
 	}
 	private int appraiseAnswers_3x3()
 	{
+		PatternReasoner pr = new PatternReasoner(this.sn);
 		int answerCandidate = -1;
 		int rows = sn.getRows();
 		int columns = sn.getColumns();
 
 		//ArrayList<ArrayList<SemanticNetRelationship>> possibleTransformationsRows = new ArrayList<ArrayList<SemanticNetRelationship>>();
-		ArrayList<ArrayList<SemanticNetRelationship>> possibleTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
-		ArrayList<ArrayList<SemanticNetRelationship>> assertedTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
-		ArrayList<SemanticNetRelationship> possibleTransformations = new ArrayList<SemanticNetRelationship>();
-		ArrayList<SemanticNetRelationship> assertedTransformations = new ArrayList<SemanticNetRelationship>();
+		//ArrayList<ArrayList<SemanticNetRelationship>> possibleTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
+		//ArrayList<ArrayList<SemanticNetRelationship>> assertedTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
+		//ArrayList<SemanticNetRelationship> possibleTransformations = new ArrayList<SemanticNetRelationship>();
+		//ArrayList<SemanticNetRelationship> assertedTransformations = new ArrayList<SemanticNetRelationship>();
 
 		ArrayList<SemanticNetState> answerCandidates = new ArrayList<SemanticNetState>(sn.getAnswerStates());
 		HashMap<String, Integer> answerCandidateFitness = new HashMap<String, Integer>();
 		
 		//change this pattern to check sequence size...
-		if(sn.getTransformationsByState().get("A").size() == 0) //no observed transformations!!
+		if(sn.getTransformationsByState().get("B").size() == 0 && sn.getTransformationsByState().get("E").size() == 0) //no observed transformations!!
 		{
 			answerCandidates = nullTransformationPrune(answerCandidates);
 		}
 		else
 		{
+
+			//ArrayList<ArrayList<SemanticNetRelationship>> possibleTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
+			//ArrayList<ArrayList<SemanticNetRelationship>> assertedTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
+			HashSet<SemanticNetRelationship> priorTrans_1 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("A").values());
+			HashSet<SemanticNetRelationship> postTrans_1= new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("B").values());
+
+			//HashSet<SemanticNetRelationship> aSnrSet = new HashSet<SemanticNetRelationship>(answerTransSet.getValue().values());
+			//HashMap<SemanticNetRelationship, SemanticNetRelationship> snrMappings = SemanticNetRelationship.getSnrMappingsFromSets(qSnrSet, aSnrSet);
+
+			ProgressionConcept pc = pr.defineProgressionConcept(priorTrans_1, postTrans_1);
+			
+			//pr.defineProgressionConcept(SemanticNetRelationship.getSnrMappingsFromSets(priorTrans_1, postTrans_1));
+			
+			ArrayList<SemanticNetRelationship> priorTrans_2 = new ArrayList<SemanticNetRelationship>(sn.getTransformationsByState().get("D").values());
+			ArrayList<SemanticNetRelationship> postTrans_2 = new ArrayList<SemanticNetRelationship>(sn.getTransformationsByState().get("E").values());
+			ArrayList<SemanticNetRelationship> priorTrans_3 = new ArrayList<SemanticNetRelationship>(sn.getTransformationsByState().get("G").values());
+			ArrayList<SemanticNetRelationship> possibleTransformations = new ArrayList<SemanticNetRelationship>();
+			ArrayList<SemanticNetRelationship> assertedTransformations = new ArrayList<SemanticNetRelationship>();
+			
 			//evaluate similarity of transformations w respect to A->B
 			//evaluate similarity of node attributes w/ respect to C 
 			
@@ -94,6 +114,7 @@ SemanticNetwork sn;
 			//!!!!!!!
 			
 			//fetch transformations...
+			/*possibleTransformations.addAll(s1.getDestinationRelationships().values());
 			for(int i = 1; i < sn.getRows()-1; i++)
 			{
 				//loop through (sorted) question row states...
@@ -106,14 +127,13 @@ SemanticNetwork sn;
 					
 							//formerly used strings, now we store the entire set of relationships.
 							//add each set of dest relationships to PT
-							possibleTransformations.addAll(s1.getDestinationRelationships().values());
 					}
 					//add each PT to PTS for pattern comparisons...
 					//generalize prior patterns...
 					//align sequences of patterns if relevant...
 					//determine subsumption...
 					possibleTransformationsSequence.add(possibleTransformations);
-			}
+			}*/
 
 			//feed forward comparison for sequencing and subsumption...
 			
@@ -137,7 +157,7 @@ SemanticNetwork sn;
 			c12 - ma: fill increase max, const above, left of increasing 
 				  mi: apply fill... (no transformation possible here!!)*/
 
-			for(int i = 1; i < sn.getRows()-2; i++)
+			/*for(int i = 1; i < sn.getRows()-2; i++)
 			{
 				//loop through (sorted) question row states...
 				ArrayList<SemanticNetState> rowStates = (ArrayList<SemanticNetState>) sn.getQuestionStatesByRow(i);
@@ -158,7 +178,7 @@ SemanticNetwork sn;
 					//align sequences of patterns if relevant...
 					//determine subsumption...
 					possibleTransformationsSequence.add(possibleTransformations);
-			}
+			}*/
 			
 			/*for(int i = 1; i < sn.getRows()-2; i++)
 			{
@@ -352,14 +372,17 @@ SemanticNetwork sn;
 			{
 
 				
-				//DEBUG THIS SNR MAPPER!!!!!!!!!!!!!!!!!!!!!!!!!!
+				//TODO DEBUG THIS SNR MAPPER!!!!!!!!!!!!!!!!!!!!!!!!!!
 				
 				HashSet<SemanticNetRelationship> aSnrSet = new HashSet<SemanticNetRelationship>(answerTransSet.getValue().values());
+				HashMap<SemanticNetRelationship, SemanticNetRelationship> snrMappings = SemanticNetRelationship.getSnrMappingsFromSets(qSnrSet, aSnrSet);
+				
+				/*HashSet<SemanticNetRelationship> aSnrSet = new HashSet<SemanticNetRelationship>(answerTransSet.getValue().values());
 				ArrayList<SNRSimilarityRecord> snrSimilarityRecords = SemanticNetRelationship.getSnrSimilarityRecords(qSnrSet, aSnrSet);
 				HashMap<SemanticNetRelationship, SemanticNetRelationship> snrMappings = new HashMap<SemanticNetRelationship, SemanticNetRelationship>();
 				Collections.sort(snrSimilarityRecords, new SNRComparator());
 				snrMappings = SemanticNetRelationship.mapSimilarRelationships(snrSimilarityRecords);
-				snrMappings = SemanticNetRelationship.populateNullSNRs(qSnrSet, aSnrSet, snrMappings);
+				snrMappings = SemanticNetRelationship.populateNullSNRs(qSnrSet, aSnrSet, snrMappings);*/
 				
 				/*for(Entry<String, SemanticNetRelationship> questionTrans : sn.getTransformationsByState().get("A").entrySet())
 				{
