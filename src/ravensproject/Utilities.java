@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -18,13 +19,13 @@ public class Utilities {
 	private static final long MEGABYTE = 1024L * 1024L;
 	  
 	public static <T> Set<T> union(Set<T> setA, Set<T> setB) {
-	    Set<T> tmp = new TreeSet<T>(setA);
+	    Set<T> tmp = new HashSet<T>(setA);
 	    tmp.addAll(setB);
 	    return tmp;
 	  }
 
 	  public static <T> Set<T> intersection(Set<T> setA, Set<T> setB) {
-	    Set<T> tmp = new TreeSet<T>();
+	    Set<T> tmp = new HashSet<T>();
 	    for (T x : setA)
 	      if (setB.contains(x))
 	        tmp.add(x);
@@ -32,7 +33,7 @@ public class Utilities {
 	  }
 
 	  public static <T> Set<T> difference(Set<T> setA, Set<T> setB) {
-	    Set<T> tmp = new TreeSet<T>(setA);
+	    Set<T> tmp = new HashSet<T>(setA);
 	    tmp.removeAll(setB);
 	    return tmp;
 	  }

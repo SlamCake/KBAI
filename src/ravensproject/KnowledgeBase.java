@@ -115,6 +115,8 @@ public class KnowledgeBase {
     	attributeMetaDataMap.put("inside", new AttributeMetaData(true, false, false));
     	attributeMetaDataMap.put("x-aligned", new AttributeMetaData(true, false, false));
     	attributeMetaDataMap.put("y-aligned", new AttributeMetaData(true, false, false));
+    	attributeMetaDataMap.put("create", new AttributeMetaData(false, false, false));
+    	attributeMetaDataMap.put("delete", new AttributeMetaData(false, false, false));
 		//left-of
 		//above
 		//overlaps

@@ -17,6 +17,7 @@ public class SemanticNetRelationship {
 	private HashMap<String,String> sourcePositionAttrs = new HashMap<String,String>();
 	private HashMap<String,String> destinationPositionAttrs = new HashMap<String,String>();
 	private String sourcePositionSignature;
+	private String snrIndex;
 	private String destinationPositionSignature;
 	private String sourceStateName;
 	private String destinationStateName;

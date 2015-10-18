@@ -2,6 +2,7 @@ package ravensproject;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -74,7 +75,8 @@ public class RelationshipReasoner {
 
 		if(!node2.getType().equals("delete") && !node1.getType().equals("create"))
 		{
-			Iterator<String> a1i = node1.getAttributes().keySet().iterator();
+			HashSet<String> attributes = (HashSet<String>) Utilities.union(node1.getAttributes().keySet(), node2.getAttributes().keySet());
+			Iterator<String> a1i = attributes.iterator();
 			int i = 0;
 			while (a1i.hasNext()) {
 				attr = a1i.next();
@@ -83,7 +85,7 @@ public class RelationshipReasoner {
 				// value to reasonRelationship()!
 
 				// Both nodes have same attribute
-				if (node2.getAttributes().containsKey(attr)) {
+				if (node1.getAttributes().containsKey(attr) && node2.getAttributes().containsKey(attr)) {
 					String n1Value = node1.getAttributes().get(attr);
 					String n2Value = node2.getAttributes().get(attr);
 					// There is a value difference, else the values are the same...
@@ -114,7 +116,9 @@ public class RelationshipReasoner {
 						// This check cannot verify node position exchanges...only
 						// isolated displacements.
 						if (n1ValuePresence != n2ValuePresence) {
-							//
+							pairedNodeRelationships.put(node1.getName() + ","
+									+ node2.getName() + "," + attr,
+									reasonRelationship(node1, node2, attr));
 						}
 
 						// try to determine relationship, if "noop" relationship
@@ -129,21 +133,42 @@ public class RelationshipReasoner {
 						// }
 					}
 				}
+				else if(KnowledgeBase.attributeMetaDataMap.get(attr).isDiscrete() && (node1.getAttributes().containsKey(attr) ^ node2.getAttributes().containsKey(attr)))
+				{
+					pairedNodeRelationships.put(node1.getName() + ","
+							+ node2.getName() + "," + attr,
+							reasonRelationship(node1, node2, attr));
+				}
+				else if(KnowledgeBase.attributeMetaDataMap.get(attr).isRelative() && (node1.getAttributes().containsKey(attr) ^ node2.getAttributes().containsKey(attr)))
+				{
+
+					//int n1ValuePresence = node1.getAttributes().containsKey(attr) ? node1.getAttributes().get(attr).split(",").length : 0;
+					//int n2ValuePresence = node2.getAttributes().containsKey(attr) ? node2.getAttributes().get(attr).split(",").length : 0;
+					// This check cannot verify node position exchanges...only
+					// isolated displacements.
+					pairedNodeRelationships.put(node1.getName() + ","
+							+ node2.getName() + "," + attr,
+							reasonRelationship(node1, node2, attr));
+				}
 			}
 		}
+
 		else
 		{
 			if(node2.getType().equals("delete"))
 			{
 				attr = "delete";
+				pairedNodeRelationships.put(node1.getName() + ","
+						+ "null" + "," + attr,
+						reasonRelationship(node1, node2, attr));
 			}
 			else
 			{
 				attr = "create";
+				pairedNodeRelationships.put("null" + ","
+						+ node2.getName() + "," + attr,
+						reasonRelationship(node1, node2, attr));
 			}
-			pairedNodeRelationships.put(node1.getName() + ","
-					+ "null" + "," + attr,
-					reasonRelationship(node1, node2, attr));
 		}
 		return pairedNodeRelationships;
 	}
@@ -244,164 +269,237 @@ public class RelationshipReasoner {
 		// Pruning directives based on more general (holistic?) criteria may
 		// need to be established.
 
-		if (attr.equals("left-of")) {
-			transformationSpecification = "left-of";
-		}
-		
-		if (attr.equals("above")) {
-			transformationSpecification = "above";
-		}
-		
-		if (attr.equals("overlaps")) {
-			transformationSpecification = "overlaps";
-		}
-		
-		if (attr.equals("inside")) {
-			transformationSpecification = "inside";
-		}
-		
-		if (attr.equals("delete")) {
-			transformationSpecification = "delete";
-		}
-		
-		if (attr.equals("create")) {
-			transformationSpecification = "create";
-		}
-		
-		if (attr.equals("shape")) {
-			transformationSpecification = "shape_"+node2.getAttributes().get(attr);
-		}
-		
-		if (attr.equals("angle")) {
-			int v1 = Integer.parseInt(value1);
-			int v2 = Integer.parseInt(value2);
-			String difference = String.valueOf(v2 - v1);
-			if(((v1 + 180)%360) == v2)
-			{
-				transformationSpecification = "angle_reflection_x_y";
+		//check to verify that the attribute did not suddenly appear...
+		if(!(node1.getAttributes().containsKey(attr) ^ node2.getAttributes().containsKey(attr)))
+		{
+			if (attr.equals("left-of")) {
+				transformationSpecification = "left-of";
 			}
-			else if(((180 - v1)+360)%360 == v2)
-			{
-				transformationSpecification = "angle_reflection_y";
+
+			if (attr.equals("above")) {
+				transformationSpecification = "above";
 			}
-			else if((360 - v1) == v2)
+
+			if (attr.equals("overlaps")) {
+				transformationSpecification = "overlaps";
+			}
+
+			if (attr.equals("inside")) {
+				transformationSpecification = "inside";
+			}
+
+			if (attr.equals("delete")) {
+				transformationSpecification = "delete";
+			}
+
+			if (attr.equals("create")) {
+				transformationSpecification = "create";
+			}
+
+			if (attr.equals("shape")) {
+				transformationSpecification = "shape_"+node2.getAttributes().get(attr);
+			}
+
+			if (attr.equals("angle")) {
+				int v1 = Integer.parseInt(value1);
+				int v2 = Integer.parseInt(value2);
+				String difference = String.valueOf(v2 - v1);
+				if(((v1 + 180)%360) == v2)
+				{
+					transformationSpecification = "angle_reflection_x_y";
+				}
+				else if(((180 - v1)+360)%360 == v2)
+				{
+					transformationSpecification = "angle_reflection_y";
+				}
+				else if((360 - v1) == v2)
+				{
+					transformationSpecification = "angle_reflection_x";
+				}
+				else
+				{
+					transformationSpecification = "angle_rotation_"+difference;
+				}
+			}
+
+			if (attr.equals("size") || attr.equals("width")
+					|| attr.equals("height")) {
+				int sourceSize = (int) KnowledgeBase.attributeMap.get(attr).get(
+						value1);
+				int destSize = (int) KnowledgeBase.attributeMap.get(attr).get(
+						value2);
+				int difference = destSize - sourceSize;
+				// growth
+				if (difference >= 1) {
+					// snr.gettransformationSpecifications().add("size_increase");
+					transformationSpecification = attr + "_increase_"
+							+ Integer.toString(difference);
+				} else // shrink
+				{
+					// snr.gettransformationSpecifications().add("size_increase");
+					transformationSpecification = attr + "_!increase_"
+							+ Integer.toString(difference);
+				}
+			}
+
+			/*
+			 * 11 - 10 = 0-1 ... 10 - 11 = 01 00 00 00 00 00 00
+			 */
+			if (attr.equals("fill")) {
+
+				transformationSpecification = "fill";
+
+				int[][] sourceFill = (int[][]) KnowledgeBase.attributeMap.get(attr)
+						.get(value1);
+				int[][] destFill = (int[][]) KnowledgeBase.attributeMap.get(attr)
+						.get(value2);
+				int[][] difference = {
+						{ destFill[0][0] - sourceFill[0][0],
+							destFill[0][1] - sourceFill[0][1] },
+							{ destFill[1][0] - sourceFill[1][0],
+								destFill[1][1] - sourceFill[1][1] } };
+
+				// test for flip or displacement
+				// test for deletion or expansion
+				int zeroPresence = 0;
+				int positivePresence = 0;
+				int negativePresence = 0;
+				for (int i = 0; i < difference.length; i++) {
+					for (int j = 0; j < difference[i].length; j++) {
+						if (difference[i][j] == 0) {
+							zeroPresence++;
+						} else if (difference[i][j] == 1) {
+							positivePresence++;
+						} else {
+							negativePresence++;
+						}
+					}
+				}
+				if (positivePresence == 4) {
+					transformationSpecification = "fill_increase_max";
+				} else if (negativePresence == 4) {
+					transformationSpecification = "fill_!increase_max";
+				} else {
+					if (positivePresence > 0) {
+						// transformationSpecification = "fill_present";
+						if (negativePresence > 0) {
+							transformationSpecification = "fill_present_changed";
+							if (positivePresence == 2 && negativePresence == 2) {
+								transformationSpecification = "fill_flip";
+							} else if (zeroPresence == 0) {
+								transformationSpecification = "fill_invert";
+							} else if (positivePresence > negativePresence) {
+								transformationSpecification = "fill_increase_!max";
+							} else if (positivePresence < negativePresence) {
+								transformationSpecification = "fill_!increase_!max";
+							}
+						} else {
+							transformationSpecification = "fill_increase_!max";
+						}
+					} else if (negativePresence > 0) {
+						transformationSpecification = "fill_!increase_!max";
+					}
+
+				}
+			}
+
+			if (attr.equals("alignment")) {
+				int[] sourceSize = (int[]) KnowledgeBase.attributeMap.get(attr)
+						.get(value1);
+				int[] destSize = (int[]) KnowledgeBase.attributeMap.get(attr).get(
+						value2);
+				int[] difference = { destSize[0] - sourceSize[0],
+						destSize[1] - sourceSize[1] };
+
+				// test for direction of shift
+				// test for one or both directions
+				if (difference[0] == 1 && difference[1] == 1) {
+					transformationSpecification = "alignment_right_up";
+				} else if (difference[0] == 1 && difference[1] == -1) {
+					transformationSpecification = "alignment_right_!up";
+
+				} else if (difference[0] == -1 && difference[1] == 1) {
+					transformationSpecification = "alignment_!right_up";
+				} else if (difference[0] == -1 && difference[1] == 1) {
+					transformationSpecification = "alignment_!right_!up";
+				} else if (difference[0] == 1 && difference[1] == 0) {
+					transformationSpecification = "alignment_right";
+				} else if (difference[0] == -1 && difference[1] == 0) {
+					transformationSpecification = "alignment_!right";
+				} else if (difference[0] == 0 && difference[1] == 1) {
+					transformationSpecification = "alignment_up";
+				} else if (difference[0] == 0 && difference[1] == -1) {
+					transformationSpecification = "alignment_!up";
+				}
+			}
+		}
+		else //attr became available or unavailable...
+		{
+			if(node1.getAttributes().containsKey(attr))
 			{
-				transformationSpecification = "angle_reflection_x";
+				int difference;
+				switch (attr) {
+				case "width":
+					difference = Math.abs((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")));
+							if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")))
+							{
+								transformationSpecification = "width_increase_"+String.valueOf(difference);
+							}
+							else if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")))
+							{
+								transformationSpecification = "width_!increase_"+String.valueOf(difference);
+							}
+					break;
+				case "height": 
+					difference = Math.abs((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")));
+							if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")))
+							{
+								transformationSpecification = "height_increase_"+String.valueOf(difference);
+							}
+							else if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")))
+							{
+								transformationSpecification = "height_!increase_"+String.valueOf(difference);
+							}
+					break;
+				default:
+					transformationSpecification = "!"+attr;
+					break;
+				}
+			}
+			else if(node2.getAttributes().containsKey(attr))
+			{
+				int difference;
+				switch (attr) {
+				case "width":
+					difference = Math.abs((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")));
+							if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")))
+							{
+								transformationSpecification = "width_!increase_"+String.valueOf(difference);
+							}
+							else if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")))
+							{
+								transformationSpecification = "width_increase_"+String.valueOf(difference);
+							}
+					break;
+				case "height": 
+					difference = Math.abs((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")));
+							if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")))
+							{
+								transformationSpecification = "height_!increase_"+String.valueOf(difference);
+							}
+							else if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")))
+							{
+								transformationSpecification = "height_increase_"+String.valueOf(difference);
+							}
+					break;
+				default:
+					transformationSpecification = attr;
+					break;
+				}
 			}
 			else
 			{
-				transformationSpecification = "angle_rotation_"+difference;
-			}
-		}
-
-		if (attr.equals("size") || attr.equals("width")
-				|| attr.equals("height")) {
-			int sourceSize = (int) KnowledgeBase.attributeMap.get(attr).get(
-					value1);
-			int destSize = (int) KnowledgeBase.attributeMap.get(attr).get(
-					value2);
-			int difference = destSize - sourceSize;
-			// growth
-			if (difference >= 1) {
-				// snr.gettransformationSpecifications().add("size_increase");
-				transformationSpecification = attr + "_increase_"
-						+ Integer.toString(difference);
-			} else // shrink
-			{
-				// snr.gettransformationSpecifications().add("size_increase");
-				transformationSpecification = attr + "_!increase_"
-						+ Integer.toString(difference);
-			}
-		}
-
-		/*
-		 * 11 - 10 = 0-1 ... 10 - 11 = 01 00 00 00 00 00 00
-		 */
-		if (attr.equals("fill")) {
-
-			transformationSpecification = "fill";
-
-			int[][] sourceFill = (int[][]) KnowledgeBase.attributeMap.get(attr)
-					.get(value1);
-			int[][] destFill = (int[][]) KnowledgeBase.attributeMap.get(attr)
-					.get(value2);
-			int[][] difference = {
-					{ destFill[0][0] - sourceFill[0][0],
-							destFill[0][1] - sourceFill[0][1] },
-					{ destFill[1][0] - sourceFill[1][0],
-							destFill[1][1] - sourceFill[1][1] } };
-
-			// test for flip or displacement
-			// test for deletion or expansion
-			int zeroPresence = 0;
-			int positivePresence = 0;
-			int negativePresence = 0;
-			for (int i = 0; i < difference.length; i++) {
-				for (int j = 0; j < difference[i].length; j++) {
-					if (difference[i][j] == 0) {
-						zeroPresence++;
-					} else if (difference[i][j] == 1) {
-						positivePresence++;
-					} else {
-						negativePresence++;
-					}
-				}
-			}
-			if (positivePresence == 4) {
-				transformationSpecification = "fill_increase_max";
-			} else if (negativePresence == 4) {
-				transformationSpecification = "fill_!increase_max";
-			} else {
-				if (positivePresence > 0) {
-					// transformationSpecification = "fill_present";
-					if (negativePresence > 0) {
-						transformationSpecification = "fill_present_changed";
-						if (positivePresence == 2 && negativePresence == 2) {
-							transformationSpecification = "fill_flip";
-						} else if (zeroPresence == 0) {
-							transformationSpecification = "fill_invert";
-						} else if (positivePresence > negativePresence) {
-							transformationSpecification = "fill_increase_!max";
-						} else if (positivePresence < negativePresence) {
-							transformationSpecification = "fill_!increase_!max";
-						}
-					} else {
-						transformationSpecification = "fill_increase_!max";
-					}
-				} else if (negativePresence > 0) {
-					transformationSpecification = "fill_!increase_!max";
-				}
-
-			}
-		}
-
-		if (attr.equals("alignment")) {
-			int[] sourceSize = (int[]) KnowledgeBase.attributeMap.get(attr)
-					.get(value1);
-			int[] destSize = (int[]) KnowledgeBase.attributeMap.get(attr).get(
-					value2);
-			int[] difference = { destSize[0] - sourceSize[0],
-					destSize[1] - sourceSize[1] };
-
-			// test for direction of shift
-			// test for one or both directions
-			if (difference[0] == 1 && difference[1] == 1) {
-				transformationSpecification = "alignment_right_up";
-			} else if (difference[0] == 1 && difference[1] == -1) {
-				transformationSpecification = "alignment_right_!up";
-
-			} else if (difference[0] == -1 && difference[1] == 1) {
-				transformationSpecification = "alignment_!right_up";
-			} else if (difference[0] == -1 && difference[1] == 1) {
-				transformationSpecification = "alignment_!right_!up";
-			} else if (difference[0] == 1 && difference[1] == 0) {
-				transformationSpecification = "alignment_right";
-			} else if (difference[0] == -1 && difference[1] == 0) {
-				transformationSpecification = "alignment_!right";
-			} else if (difference[0] == 0 && difference[1] == 1) {
-				transformationSpecification = "alignment_up";
-			} else if (difference[0] == 0 && difference[1] == -1) {
-				transformationSpecification = "alignment_!up";
+				transformationSpecification = attr;
 			}
 		}
 
@@ -512,7 +610,7 @@ public class RelationshipReasoner {
 		}*/
 
 		transformationNodeMappings.putAll(naiveMapTransformationNodes(s1, s2));
-
+		s1.setSnnMappings(transformationNodeMappings);
 		// For each state, reason relationships between each mapping...
 
     	String[] logArgs ;
@@ -522,7 +620,8 @@ public class RelationshipReasoner {
         	KBAILogging.updateLog("performance", logArgs);
         	KBAILogging.updateLog("memory consumption", logArgs);
     	}
-
+    	
+//get key here is overwriting the 'create' entries where the 'key' would have been the 
 		for (Entry<SemanticNetNode, SemanticNetNode> e : transformationNodeMappings
 				.entrySet()) {
 			transformationRelationships.putAll((compareNodes(e.getKey(),
@@ -543,6 +642,62 @@ public class RelationshipReasoner {
 			snr.setSourceStateName(s1.getName());
 			snr.setDestinationStateName(s2.getName());
 		}
+		
+		//remove position relationships resulting from creations/deletions...
+		HashMap<String, SemanticNetRelationship> tempTransRelationships = new HashMap<String, SemanticNetRelationship>(transformationRelationships);
+		HashSet<String> create_delete_node_names = new HashSet<String>();
+		for (SemanticNetRelationship snr : tempTransRelationships.values()) {
+			if(snr.getAttribute().equals("create"))
+			{
+				create_delete_node_names.add(snr.getDestinationNodeName());
+			}
+			else if(snr.getAttribute().equals("delete"))
+			{
+				create_delete_node_names.add(snr.getSourceNodeName());
+			}
+		}
+		
+		for (SemanticNetRelationship snr : tempTransRelationships.values()) {
+			if(KnowledgeBase.attributeMetaDataMap.get(snr.getAttribute()).isRelative())
+			{
+				SemanticNetNode sNode = s1.getNodeByName(snr.getSourceNodeName());
+				SemanticNetNode dNode = s2.getNodeByName(snr.getDestinationNodeName());
+				HashSet<String> posAttrVals = new HashSet<String>();
+				if(sNode.getAttributes().containsKey(snr.getAttribute()))
+				{
+					posAttrVals.addAll(new HashSet<String>(Arrays.asList(sNode.getAttributes().get(snr.getAttribute()).split(","))));
+				}
+				if(dNode.getAttributes().containsKey(snr.getAttribute()))
+				{
+					posAttrVals.addAll(new HashSet<String>(Arrays.asList(dNode.getAttributes().get(snr.getAttribute()).split(","))));
+				}
+				//HashSet<String> posAttrVals = new HashSet<String>(Arrays.asList(s1.getNodeByName(snr.getSourceNodeName()).getAttributes().get(snr.getAttribute()).split(",")));
+				//posAttrVals.addAll(new HashSet<String>(Arrays.asList(s2.getNodeByName(snr.getDestinationNodeName()).getAttributes().get(snr.getAttribute()).split(","))));
+				posAttrVals.removeAll(create_delete_node_names);
+				
+				HashSet<String> unchangedPairedNodeNames = new HashSet<String>();
+				for(String s : posAttrVals)
+				{
+					if(s1.getNodes().containsKey(s))
+					{
+						sNode = s1.getNodeByName(s);
+						if(posAttrVals.contains(s1.getSnnMappings().get(sNode).getName()))
+						{
+							unchangedPairedNodeNames.add(sNode.getName());
+							unchangedPairedNodeNames.add(s1.getSnnMappings().get(sNode).getName());
+						}
+					}
+				}
+				
+				posAttrVals.removeAll(unchangedPairedNodeNames);
+				
+				if(posAttrVals.isEmpty())
+				{
+					transformationRelationships.remove(snr.getSourceNodeName()+","+snr.getDestinationNodeName()+","+snr.getAttribute());
+				}
+			}
+		}
+		
 		s1.setSourceRelationships(transformationRelationships);
 		s2.setDestinationRelationships(transformationRelationships);
 		return transformationRelationships;

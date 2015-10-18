@@ -44,7 +44,7 @@ public class SemanticNetwork {
 		return stateMap.get(this.getStateByName(KnowledgeBase.sequence2NameMap.get(sequence)));
 	}
 	public SemanticNetState getStateByPosition(int row, int column) {
-		return stateMap.get(this.getStateByName(KnowledgeBase.sequence2NameMap.get(row*column+column)));
+		return this.getStateByName(KnowledgeBase.sequence2NameMap.get(row*column+column));
 	}
 	
 	public SemanticNetNode getNodeByName(String stateName, String nodeName) {

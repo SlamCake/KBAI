@@ -125,7 +125,6 @@ public class PatternReasoner {
 					
 				//}
 			}
-			
 		}
 		
 		// LOOP THROUGH DELTA MATRIX TO GATHER PAIRINGS WITH MINIMAL VARIANCE
@@ -161,7 +160,9 @@ public class PatternReasoner {
 			entityDeltaVarianceMap.put(sequenceMapping, minVariance);
 		}
 		ArrayList<Entry<String, Integer>> varianceMappingList = Utilities.mapToStortedList(entityDeltaVarianceMap);
-		
+	}
+}
+
 		//TODO ADD SORT MAP BY VALUE TO UTILITIES...
 		
 		
@@ -189,9 +190,9 @@ public class PatternReasoner {
 				}
 			}
 		}*/
-	}
+	
 
-	private String GeneralizeBehaviorFromSpecs(String behavior,
+	/*private String GeneralizeBehaviorFromSpecs(String behavior,
 			ArrayList<String> tSpecs) {
 		if (behavior.isEmpty() && tSpecs.size() > 0)
 		{
@@ -204,11 +205,11 @@ public class PatternReasoner {
 		}
 		
 		return null;
-	}
-	private String GeneralizeSpecification(String behavior, String s) {
+	}*/
+	/*private String GeneralizeSpecification(String behavior, String s) {
 		// TODO Auto-generated method stub
 		return null;
-	}
+	}*/
 	/*public GeneralizeTransitionBehavior()
 	{
 		this.sn = sn;
@@ -218,7 +219,7 @@ public class PatternReasoner {
 		this.sn = sn;
 	}*/
 
-	public void defineRowConcept(
+	/*public void defineRowConcept(
 			HashMap<SemanticNetRelationship, SemanticNetRelationship> snrMappingsFromSets) {
 		// TODO Auto-generated method stub
 		for(Entry<SemanticNetRelationship, SemanticNetRelationship> e : snrMappingsFromSets.entrySet())
@@ -227,16 +228,16 @@ public class PatternReasoner {
 			String[] s2 = e.getKey().getTransformationSpecification().split("_");
 		}
 		
-	}
+	}*/
 
-	public ProgressionConcept defineProgressionConcept(
+	/*public ProgressionConcept defineProgressionConstraints(
 			HashSet<SemanticNetRelationship> priorTrans,
 			HashSet<SemanticNetRelationship> postTrans) {
-			pc.analyzeRowInstance(priorTrans, postTrans);
+			//pc.analyzeRowInstance(priorTrans, postTrans);
 			
 		
 		return null;
-	}
+	}*/
 
-}
+
 

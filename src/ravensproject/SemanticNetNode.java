@@ -1,5 +1,6 @@
 
 package ravensproject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +32,7 @@ public class SemanticNetNode {
     public SemanticNetNode(RavensObject ro) 
     {
     	setName(ro.getName());
-    	setAttributes(ro.getAttributes());
+    	//setAttributes(ro.getAttributes());
     	setAttributes(ro.getAttributes());
     	this.setType("normal");
     	for(Entry<String, String> attrEntry : ro.getAttributes().entrySet())
@@ -149,7 +150,25 @@ public class SemanticNetNode {
 	public int calculateRelativePositionSimilarity(String RPSig) {
 		// TODO system of allowances given prior displacements, creates, and deletes...
 		int similarity = 0;
-		for(int i = 0; i < RPSig.length(); i++)
+		
+		ArrayList<String> CurRPSigAL = new ArrayList<String>(Arrays.asList(this.relativePosSignature.split("_")));
+		//HashSet<String> NextRPSigAL = new HashSet<String>(Arrays.asList(RPSig.split("_")));
+		ArrayList<String> NextRPSigAL = new ArrayList<String>(Arrays.asList(RPSig.split("_")));
+		for(int i = 0; i < CurRPSigAL.size(); i++)
+		{
+			if(CurRPSigAL.get(i).equals(NextRPSigAL.get(i)))
+			{
+				//consider not accounting for zeroes?
+				similarity += 1;
+				similarity += Integer.valueOf(CurRPSigAL.get(i));
+			}
+			else
+			{
+				similarity += Math.min(Integer.valueOf(NextRPSigAL.get(i)), Integer.valueOf(CurRPSigAL.get(i)));
+				similarity -= Math.abs(Integer.valueOf(NextRPSigAL.get(i)) - Integer.valueOf(CurRPSigAL.get(i)));
+			}
+		}
+		/*for(int i = 0; i < RPSig.length(); i++)
 		{
 			if(RPSig.charAt(i) == this.relativePosSignature.charAt(i))
 			{
@@ -159,7 +178,7 @@ public class SemanticNetNode {
 			{
 				similarity -= 1;
 			}
-		}
+		}*/
 		return similarity;
 	}
 	public int calculateRelativePositionSimilarity(String RPSig1, String RPSig2) {
@@ -202,6 +221,7 @@ public class SemanticNetNode {
 
 	public SemanticNetNode(String type) {
 		this.setType(type);
+		this.setName("null");
 	}
 
 	public HashMap<String, String> getAttributes() {
@@ -291,16 +311,25 @@ public class SemanticNetNode {
 	    //compare non relative attributes
 	    similarities = new HashSet<String>(this.getNonRelativeAttributes().keySet());
 	    differences = new HashSet<String>(this.getNonRelativeAttributes().keySet());
-	    similarities.retainAll(nNonRelAttributes);
-	    differences.removeAll(nNonRelAttributes);
+	    
+	    similarities = Utilities.intersection(similarities, nNonRelAttributes);
+	    differences = Utilities.symDifference(differences, nNonRelAttributes);
 	    similarity += similarities.size() - differences.size();
 	    
 	    //compare non relative values
 	    similarities = new HashSet<String>(this.getNonRelativeAttributes().values());
 	    differences = new HashSet<String>(this.getNonRelativeAttributes().values());
-	    similarities.retainAll(nNonRelValues);
-	    differences.removeAll(nNonRelValues);
+	    //similarities.retainAll(nNonRelValues);
+	    //differences.removeAll(nNonRelValues);
+	    similarities = Utilities.intersection(similarities, nNonRelValues);
+	    differences = Utilities.difference(differences, nNonRelValues);
 	    similarity += similarities.size() - differences.size();
+	    
+	    //extra point for perfect matches, prioritize node attributes over position...
+	   /* if(differences.size() == 0)
+	    {
+	    	similarity++;
+	    }*/
 		
 		return similarity;
 	}
@@ -318,8 +347,10 @@ public class SemanticNetNode {
 	    //compare relative attributes
 	    similarities = new HashSet<String>(this.getRelativeAttributes().keySet());
 	    differences = new HashSet<String>(this.getRelativeAttributes().keySet());
-	    similarities.retainAll(nRelAttributes);
-	    differences.removeAll(nRelAttributes);
+	    //similarities.retainAll(nRelAttributes);
+	    //differences.removeAll(nRelAttributes);
+	    similarities = Utilities.intersection(similarities, nRelAttributes);
+	    differences = Utilities.symDifference(differences, nRelAttributes);
 	    similarity += similarities.size() - differences.size();
 
 	    //compare relative values

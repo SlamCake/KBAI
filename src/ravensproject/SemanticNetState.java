@@ -263,7 +263,7 @@ public class SemanticNetState {
             			//}
                 		if(n1.getRelativeValue("left-of").equals(n2.getRelativeValue("left-of")))
                 		{
-                			n1.addRelativeAttribute("x-aligned", n2.getName());
+                			n1.addRelativeAttribute("y-aligned", n2.getName());
                 			//n2.addRelativeAttribute("x-aligned", n1.getName());
                 		}
             		//}
@@ -271,7 +271,7 @@ public class SemanticNetState {
             		//{
                 		if(n1.getRelativeValue("above").equals(n2.getRelativeValue("above")))
                 		{
-                			n1.addRelativeAttribute("y-aligned", n2.getName());
+                			n1.addRelativeAttribute("x-aligned", n2.getName());
                 			//n2.addRelativeAttribute("y-aligned", n1.getName());
                 		}
             		//}
@@ -383,8 +383,7 @@ public class SemanticNetState {
 		this.snnMappings = snnMappings;
 	}
 
-	public SemanticNetNode getNodeByPositionSignature(
-			String destinationPositionSignature) {
+	public SemanticNetNode getNodeByPositionSignature(String destinationPositionSignature) {
 			for(SemanticNetNode snn : this.nodes.values())
 			{
 				if(snn.getRelativePositionSignature().equals(destinationPositionSignature))
@@ -392,7 +391,7 @@ public class SemanticNetState {
 					return snn;
 				}
 			}
-		return null;
+		return new SemanticNetNode("null");
 	}
 
 	/*for (Map.Entry<String, String> attributeEntry : o.getAttributes().entrySet())

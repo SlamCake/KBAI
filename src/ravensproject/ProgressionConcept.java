@@ -3,6 +3,7 @@ package ravensproject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 public class ProgressionConcept {
 
@@ -16,12 +17,12 @@ public class ProgressionConcept {
 	private int rowOffset;
 	
 	private int numTotalTrans = 0;
-	private ArrayList<Integer> numRowTrans;
-	private ArrayList<Integer> numPriorTrans;
-	private ArrayList<Integer> numPostTrans;
+	private ArrayList<Integer> numRowTrans = new ArrayList<Integer>();
+	private ArrayList<Integer> numPriorTrans = new ArrayList<Integer>();
+	private ArrayList<Integer> numPostTrans = new ArrayList<Integer>();
 
-	private HashSet<String> priorTransTypes = new HashSet<String>();
-	private HashSet<String> postTransTypes = new HashSet<String>();
+	private ArrayList<HashSet<String>> priorTransTypes = new ArrayList<HashSet<String>>();
+	private ArrayList<HashSet<String>> postTransTypes = new ArrayList<HashSet<String>>();
 	
 	private ArrayList<HashSet<SemanticNetRelationship>> priorTrans = new ArrayList<HashSet<SemanticNetRelationship>>();
 	private ArrayList<HashSet<SemanticNetRelationship>> postTrans= new ArrayList<HashSet<SemanticNetRelationship>>();
@@ -49,7 +50,9 @@ public class ProgressionConcept {
 	private HashMap<String, HashSet<String>> transSetDistinctAttr = new HashMap<String, HashSet<String>>();
 	//private HashSet<SemanticNetRelationship> predicted
 	private HashMap<String, HashSet<String>> constraints = new HashMap<String, HashSet<String>>();
-	private HashSet<SemanticNetRelationship> predictedTransformations = new HashSet<SemanticNetRelationship>();;
+	private HashSet<SemanticNetRelationship> predictedTransformations = new HashSet<SemanticNetRelationship>();
+	private HashMap<String, String> predictedParameters = new HashMap<String,String>();
+	private HashSet<SemanticNetRelationship> redundantTransformations = new HashSet<SemanticNetRelationship>();
 	private String[][] predictedPositionMatrix;
 	//private ArrayList<String> postConditions;
 	//private ArrayList<String> postConditions;
@@ -58,54 +61,77 @@ public class ProgressionConcept {
 		this.sn = sn;
 	}
 
-	
-	public void getProgressionDataFromTransformations(HashSet<SemanticNetRelationship> priorTrans, HashSet<SemanticNetRelationship> postTrans) {
-		
+	public void getProgressionDataFromPriorTransformationSet(HashSet<SemanticNetRelationship> priorTrans) {
+
+		numTotalTrans += (priorTrans.size());
 		this.priorTrans.add(priorTrans);
-		this.postTrans.add(postTrans);
-		
 		numPriorTrans.add(priorTrans.size());
-		numPostTrans.add(postTrans.size());
-		numRowTrans.add(priorTrans.size()+postTrans.size());
-		numTotalTrans += (priorTrans.size()+postTrans.size());
-		
 		HashSet<String> tempHSComp = new HashSet<String>();
 		HashSet<String> tempHSType = new HashSet<String>();
 		ArrayList<HashSet<String>> tempHSPos = new ArrayList<HashSet<String>>();
-		
 		for(SemanticNetRelationship snr : priorTrans)
 		{
 			tempHSComp.add(snr.getAttribute());
 			//tempHSPos.add(snr.getAttribute()+"_"+snr.getDestinationPositionSignature());
 			tempHSPos.add(snr.getDestinationPositionAttrsEnumAsSet());
-			if(!priorTransTypes.contains(snr.getAttribute()))
+			if(!tempHSType.contains(snr.getAttribute()))
 			{
-				priorTransTypes.add(snr.getAttribute());
+				tempHSType.add(snr.getAttribute());
 			}
 			
 		}
 		
 		priorTransCompositions.add(tempHSComp);
 		priorTransPositions.add(tempHSPos);
+		priorTransTypes.add(tempHSType);
 		
-		tempHSComp.clear();
-		tempHSType.clear();
-		tempHSPos.clear();
-		
+		//tempHSComp.clear();
+		//tempHSType.clear();
+		//tempHSPos.clear();
+	}
+	
+	public void getProgressionDataFromPosteriorTransformationSet(HashSet<SemanticNetRelationship> postTrans) {
+		numTotalTrans += (postTrans.size());
+		this.postTrans.add(postTrans);
+		numPostTrans.add(postTrans.size());
+		HashSet<String> tempHSComp = new HashSet<String>();
+		HashSet<String> tempHSType = new HashSet<String>();
+		ArrayList<HashSet<String>> tempHSPos = new ArrayList<HashSet<String>>();
 		for(SemanticNetRelationship snr : postTrans)
 		{
 			tempHSComp.add(snr.getAttribute());
 			//tempHSPos.add(snr.getAttribute()+"_"+snr.getDestinationPositionSignature());
 			tempHSPos.add(snr.getDestinationPositionAttrsEnumAsSet());
-			if(!postTransTypes.contains(snr.getAttribute()))
+			if(!tempHSType.contains(snr.getAttribute()))
 			{
-				postTransTypes.add(snr.getAttribute());
+				tempHSType.add(snr.getAttribute());
 			}
-			
 		}
 		
+		//if no transformations involve positions
+		/*if(tempHSPos.size() == 0)
+		{
+			
+		}*/
 		postTransCompositions.add(tempHSComp);
 		postTransPositions.add(tempHSPos);
+		postTransTypes.add(tempHSType);
+		
+		//tempHSComp.clear();
+		//tempHSType.clear();
+		//tempHSPos.clear();
+	}
+	
+	public void getProgressionDataFromRowTransformations(HashSet<SemanticNetRelationship> priorTrans, HashSet<SemanticNetRelationship> postTrans) {
+		
+		
+		numRowTrans.add(priorTrans.size()+postTrans.size());
+		
+		getProgressionDataFromPriorTransformationSet(priorTrans);	
+		getProgressionDataFromPosteriorTransformationSet(postTrans);
+		
+		
+		
 		
 		//code to check if numRowTrans > 1, check if prior 1 transSet == posterior 2 transSet, assert offset.
 		
@@ -129,16 +155,33 @@ public class ProgressionConcept {
 
 
 	public void generateConstraints() {
+
+		predictTransformationCount();
+		predictTransformationCompositionByIntersection();
+		predictTransformationTypeByIntersection();
+		predictTransformationPositionByIntersection();
+		classifyTransformationCompositionBehavior();
+		substituteTransformationsByComposition();
+		predictRedundantTransformations();
 		
 		//!!!!!!!!!!!!!!!!!!!!!!!!!
 		//generateConstraints for number of transformations...row by row...
 		//!!!!!!!!!!!!!!!!!!!!!!!!!
 		
-		int numRowVal = numRowTrans.get(0);
-		boolean sameVal = true;
-		for(int i = 0; i < numRowTrans.size(); i++)
+		
+		//GET POSSIBLE (currently avail) AND REQUIRED TRANSFORMATION TYPES
+		
+		/*
+		else if(priorTransNumDeltas.get(0) == priorTransNumDeltas.get(1) && postTransNumDeltas.get(0) && priorTransNumDeltas.get(0))
 		{
-			if(numRowVal != numRowTrans.get(i))
+			predictedParameters.put("TransNum", priorTransNumDeltas);
+		}*/
+		/*
+		int numPosteriorTransVal = numPostTrans.get(0);
+		boolean sameVal = true;
+		for(int i = 0; i < numPostTrans.size(); i++)
+		{
+			if(numPosteriorTransVal != numPostTrans.get(i))
 			{
 				sameVal = false;
 			}
@@ -147,18 +190,23 @@ public class ProgressionConcept {
 		if(sameVal)
 		{
 			//constant value
+			
+			predictedParameters.put("numPostTrans", String.valueOf(numPosteriorTransVal));
 		}
 		else
 		{
 
 			ArrayList<Integer> deltas = new ArrayList<Integer>();
-			for(int i = 0; i < numRowTrans.size()-1; i++)
+			for(int i = 0; i < numPostTrans.size()-1; i++)
 			{
-				deltas.add(numRowTrans.get(i+1) - numRowTrans.get(i));
+				deltas.add(numPostTrans.get(i+1) - numPostTrans.get(i));
 			}
 			if(deltas.get(0) == deltas.get(1))
 			{
 				//constant increase/decrease change
+
+				predictedParameters.put("numRowTrans", String.valueOf(numPostTrans.get()));
+				
 			}
 			else if(deltas.get(0) < 0) // row 2 has fewer transformations than row 1
 			{
@@ -182,14 +230,14 @@ public class ProgressionConcept {
 					
 				}
 			}
-		}
+		}*/
 		
 		//!!!!!!
 		//Gen constraints for transformation compositions
 		//We may not care about composition if variance is too high or if one set does not subsume the other
 		//We may want to test for an intersection presence of some kind...
 		//!!!!!!
-		
+		/*
 		ArrayList<HashSet<String>> differenceListPri2Post = new ArrayList<HashSet<String>>();
 		ArrayList<HashSet<String>> differenceListPri2Pri = new ArrayList<HashSet<String>>();
 		ArrayList<HashSet<String>> differenceListPost2Post = new ArrayList<HashSet<String>>();
@@ -222,10 +270,11 @@ public class ProgressionConcept {
 				differenceListRow2Row.add(differenceSet);
 				differenceSet.clear();
 			}
-		}
+		}*/
 		
 		//differenceSet = differenceListPri2Pri.get(0);
-		sameVal = true;
+		/*
+		boolean sameVal = true;
 		for(int i = 0; i < differenceListPri2Pri.size()-1; i++)
 		{
 			if(!Utilities.difference(differenceListPri2Pri.get(0), differenceListPri2Pri.get(i)).isEmpty())
@@ -254,51 +303,10 @@ public class ProgressionConcept {
 				}
 			}			
 			
-		}
+		}*/
 
 		
-		
-		
-		// get intersections of all compositions to specify what should exist in the answer set transformations
-		HashSet<String> transCompIntersection = priorTransCompositions.get(0);
-		for(int i = 0; i < priorTransCompositions.size()-1 ; i++)
-		{
-			transCompIntersection = (HashSet<String>) Utilities.intersection(transCompIntersection, priorTransCompositions.get(i));
-			if(i < postTransCompositions.size()-1)
-			{
-				transCompIntersection = (HashSet<String>) Utilities.intersection(transCompIntersection, postTransCompositions.get(i));
-			}
-		}
-		
-		if(!transCompIntersection.isEmpty())
-		{
-			constraints.put("transComposition", transCompIntersection);
-			//predictedTransformations MUST HAVE a transformation of the types in the intersection...
-			//generalize transformation between post trans compositions
-			//if there is only one instance of a type of transformation...generalize these
-			//select the required pairs between posterior transformationst that are most similar.
-			
-			//predictedTransformations.addAll(transCompIntersection);
-		}
-		
 
-		// get common position distinctons of posterior transformations to specify where the transformations should be applied
-		HashSet<String> postTransPosIntersection = postTransPositions.get(0).get(0);
-		for(int i = 0; i < postTransPositions.size()-1 ; i++)
-		{
-			for(int j = 0; j < postTransPositions.get(i).size()-1; j++)
-			{
-			postTransPosIntersection = (HashSet<String>) Utilities.intersection(postTransPosIntersection, postTransPositions.get(i).get(j));
-			}
-		}
-		
-		if(!postTransPosIntersection.isEmpty())
-		{
-			constraints.put("transPosition", postTransPosIntersection);
-			//define constraint that predicted posterior transformations should have the intersection of postTransPositions
-			
-			//predictedTransformations.addAll(transCompIntersection);
-		}
 		
 		
 		//!!!!!!
@@ -309,58 +317,232 @@ public class ProgressionConcept {
 		
 		//String [] compositionFeatures = constraints.get("TransComp").split("_");
 		
-		if(Utilities.difference(priorTransCompositions.get(0), postTransCompositions.get(1)).isEmpty() && 
-				!constraints.get("TransComp").contains("rConst") && 
-				!constraints.get("TransComp").contains("mConst"))
-		{
-			//constraints.put("offset", "1");
-			predictedTransformations.addAll(this.priorTrans.get(1));
-		}
 		
+		
+	}
+
+
+	private void substituteTransformationsByComposition() {
 		//all transformations have same composition
-		else if(constraints.get("TransComp").contains("mConst"))
+		if(constraints.get("TransComp").contains("mConst"))
 		{
 			//constraints.put("offset", "1");
-		
 			predictedTransformations.addAll(this.postTrans.get(1));
 		}
-		
 		// all rows have same composition
 		else if(constraints.get("TransComp").contains("rConst")) 
 		{
 			predictedTransformations.addAll(this.priorTrans.get(2));
 		}
-		
 		// all post trans sets have same composition
 		else if(constraints.get("TransComp").contains("postConst"))
 		{
 			predictedTransformations.addAll(this.postTrans.get(1));
 		}
+		else if(constraints.get("TransComp").contains("offset_1"))
+		{
+			predictedTransformations.addAll(this.priorTrans.get(1));
+		}
 		
+	}
+
+	private void predictRedundantTransformations() {
 		// check if target node already has expected value in prior states, 
 		// if so then remove that transformation from predictions.
 		// addresses problem C-12
 		if(!predictedTransformations.isEmpty())
 		{
-			for(SemanticNetRelationship snr : predictedTransformations)
+			HashSet<SemanticNetRelationship> tempPredTrans = new HashSet<SemanticNetRelationship>(predictedTransformations);
+			for(SemanticNetRelationship snr : tempPredTrans)
 			{
+				//SemanticNetRelationship snrCopy = new SemanticNetRelationship(snr);
 				snr.getSourceStateName();
 				SemanticNetNode prevRowTargetSNN = sn.getNodeByName(snr.getDestinationStateName(), snr.getDestinationNodeName());
-				SemanticNetNode curRowTargetSNN = sn.getStateByPosition(sn.getRows(), sn.getColumns()-1).getNodeByPositionSignature(snr.getDestinationPositionSignature());
-				if(prevRowTargetSNN.calculateAttributeMatch(curRowTargetSNN))
+				
+				//JAVA Is returning a NULL STATE from the HASHMAP...WHY???
+				SemanticNetState s_c1 = sn.getStateByPosition(sn.getRows(), sn.getColumns()-2);
+				SemanticNetState s_c2 = sn.getStateByPosition(sn.getRows(), sn.getColumns()-1);
+				
+				String sig = snr.getDestinationPositionSignature();
+				SemanticNetNode curRowTargetSNN_c1 = s_c1.getNodeByPositionSignature(sig);
+				SemanticNetNode curRowTargetSNN_c2 = s_c2.getNodeByPositionSignature(sig);
+				//SemanticNetNode curRowTargetSNN = sn.getStateByPosition(sn.getRows(), sn.getColumns()-1).getNodeByPositionSignature(snr.getDestinationPositionSignature());
+				if(prevRowTargetSNN.calculateAttributeMatch(curRowTargetSNN_c1) && prevRowTargetSNN.calculateAttributeMatch(curRowTargetSNN_c2))
 				{
 					predictedTransformations.remove(snr);
+					redundantTransformations.add(snr);
 				}
 			}
 			//predictedTransformations.addAll(this.postTrans.get(1));
 		}
-		
-		
-
 		//get position and transformation outcomes...
+	}
+
+	private void classifyTransformationCompositionBehavior() {
+		// get intersections of all compositions to specify what must exist in the answer set transformations
+		HashSet<String> transComp_1_1 = priorTransCompositions.get(0);
+		HashSet<String> transComp_1_2 = postTransCompositions.get(0);
+		HashSet<String> transComp_2_1 = priorTransCompositions.get(1);
+		HashSet<String> transComp_2_2 = postTransCompositions.get(1);
+		HashSet<String> transComp_3_1 = priorTransCompositions.get(2);
+		
+		int m_differences = 0;
+		HashSet<String> m_diff = (HashSet<String>) Utilities.symDifference(transComp_1_1, transComp_1_2);
+		m_differences += m_diff.size();
+		m_diff = (HashSet<String>) Utilities.symDifference
+				(transComp_1_1, transComp_2_1);
+		m_differences += m_diff.size();
+		m_diff = (HashSet<String>) Utilities.symDifference(transComp_1_1, transComp_2_2);
+		m_differences += m_diff.size();
+		m_diff = (HashSet<String>) Utilities.symDifference(transComp_1_1, transComp_3_1);
+		m_differences += m_diff.size();
+		
+		HashSet<String> r1_diff = (HashSet<String>) Utilities.symDifference(transComp_1_1, transComp_1_2);
+		HashSet<String> r2_diff = (HashSet<String>) Utilities.symDifference(transComp_2_1, transComp_2_2);
+		
+		HashSet<String> post_diff = (HashSet<String>) Utilities.symDifference(transComp_1_2, transComp_2_2);
+
+		HashSet<String> offset_diff = (HashSet<String>) Utilities.symDifference(transComp_1_1, transComp_2_2);
+		
+		constraints.put("TransComp", new HashSet<String>());
+		if(m_differences == 0)
+		{
+			constraints.get("TransComp").add("mConst");
+		}
+
+		if(r1_diff.isEmpty() && r2_diff.isEmpty())
+		{
+			constraints.get("TransComp").add("rConst");
+		}
+		
+		if(post_diff.isEmpty())
+		{
+			constraints.get("TransComp").add("postConst");
+		}
+		
+		if(offset_diff.isEmpty())
+		{
+			constraints.get("TransComp").add("offset_1");
+		}
+
+		/*if(Utilities.difference(priorTransCompositions.get(0), postTransCompositions.get(1)).isEmpty() && 
+				!constraints.get("TransComp").contains("rConst") && 
+				!constraints.get("TransComp").contains("mConst"))
+		{
+			//constraints.put("offset", "1");
+			predictedTransformations.addAll(this.priorTrans.get(1));
+		}*/
+	}
+	
+	private void predictTransformationCompositionByIntersection() {
+		// get intersections of all compositions to specify what must exist in the answer set transformations
+		HashSet<String> transCompIntersection = priorTransCompositions.get(0);
+		for(int i = 0; i < priorTransCompositions.size() ; i++)
+		{
+			//for now don't worry about priorTransCompositions...
+			transCompIntersection = (HashSet<String>) Utilities.intersection(transCompIntersection, priorTransCompositions.get(i));
+			if(i < postTransCompositions.size())
+			{
+				transCompIntersection = (HashSet<String>) Utilities.intersection(transCompIntersection, postTransCompositions.get(i));
+			}
+		}
+		
+		if(!transCompIntersection.isEmpty())
+		{
+			constraints.put("transCompositionRequirements", transCompIntersection);
+			//predictedTransformations MUST HAVE a transformation of the types in the intersection...
+			//generalize transformation between post trans compositions
+			//if there is only one instance of a type of transformation...generalize these
+			//select the required pairs between posterior transformationst that are most similar.
+			
+			//predictedTransformations.addAll(transCompIntersection);
+		}
+	}
+
+	private void predictTransformationTypeByIntersection() {
+		// get intersections of all transformation types to specify what must exist in the answer set transformations
+		HashSet<String> transTypeIntersection = postTransTypes.get(0);
+		for(int i = 0; i < priorTransTypes.size() ; i++)
+		{
+			//for now don't worry about priorTransCompositions...
+			transTypeIntersection = (HashSet<String>) Utilities.intersection(transTypeIntersection, priorTransTypes.get(i));
+			if(i < postTransTypes.size())
+			{
+				transTypeIntersection = (HashSet<String>) Utilities.intersection(transTypeIntersection, postTransTypes.get(i));
+			}
+		}
+		if(!transTypeIntersection.isEmpty())
+		{
+			constraints.put("transTypeRequirements", transTypeIntersection);
+		}
+	}
+	
+	private void predictTransformationPositionByIntersection() {
+		// get common position distinctons of posterior transformations to specify where the transformations should be applied
+		HashSet<String> postTransPosIntersection = postTransPositions.get(0).get(0);
+		for(int i = 0; i < postTransPositions.size() ; i++)
+		{
+			for(int j = 0; j < postTransPositions.get(i).size(); j++)
+			{
+			postTransPosIntersection = (HashSet<String>) Utilities.intersection(postTransPosIntersection, postTransPositions.get(i).get(j));
+			}
+		}
+		
+		if(!postTransPosIntersection.isEmpty())
+		{
+			constraints.put("transPositionRequirements", postTransPosIntersection);
+			//define constraint that predicted posterior transformations should have the intersection of postTransPositions
+			
+			//predictedTransformations.addAll(transCompIntersection);
+		}
 		
 	}
 
+	private void predictTransformationCount() {
+		ArrayList<Integer> priorTransNumDeltas = new ArrayList<Integer>();
+		for(int i = 0; i < numPriorTrans.size()-1; i++)
+		{
+			priorTransNumDeltas.add(numPriorTrans.get(i+1) - numPriorTrans.get(i));
+		}
+		
+		/*ArrayList<Integer> postTransNumDeltas = new ArrayList<Integer>();
+		for(int i = 0; i < numPostTrans.size()-1; i++)
+		{
+			postTransNumDeltas.add(numPostTrans.get(i+1) - numPostTrans.get(i));
+		}*/
+		
+		int row1TransNumDelta = numPostTrans.get(0) - numPriorTrans.get(0);
+		int row2TransNumDelta = numPostTrans.get(1) - numPriorTrans.get(1);
+		
+		if(row1TransNumDelta == 0 && row2TransNumDelta == 0)
+		{
+			HashSet<String> hs = new HashSet<String>();
+			hs.add(String.valueOf(numPriorTrans.get(2)));
+			constraints.put("transNumRequirements", hs);
+			predictedParameters.put("transNumRequirements", String.valueOf(numPriorTrans.get(2)));
+		}
+		else if (row1TransNumDelta == row2TransNumDelta)
+		{
+			HashSet<String> hs = new HashSet<String>();
+			hs.add(String.valueOf(numPriorTrans.get(2)+row2TransNumDelta));
+			constraints.put("transNumRequirements", hs);
+			predictedParameters.put("transNumRequirements", String.valueOf(numPriorTrans.get(2)+row2TransNumDelta));
+		}
+	}
+
+	//GET CONSTRAINTS AND PREDICTED TRANSFORMATIONS METHODS!!
+	public HashSet<SemanticNetRelationship> getPredictedTransformations() {
+		return this.predictedTransformations;
+	}
+	public HashSet<SemanticNetRelationship> getRedundantTransformations() {
+		return this.redundantTransformations;
+	}
+	public HashMap<String, HashSet<String>> getConstraints() {
+		return this.constraints;
+	}
+	public HashMap<String, String> getPredictedParameters() {
+		return this.predictedParameters;
+	}
 	public void getProgressionDataFromStates(SemanticNetState s1, SemanticNetState s2, SemanticNetState s3 ) 
 	{
 		
@@ -372,6 +554,18 @@ public class ProgressionConcept {
 	}
 	public void predictAssertions() {
 		
+	}
+
+	public HashSet<String> getCompositionFromTransSet(
+			Entry<String, HashMap<String, SemanticNetRelationship>> answerTransSet) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public HashSet<String> getTypesFromTransSet(
+			Entry<String, HashMap<String, SemanticNetRelationship>> answerTransSet) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }
