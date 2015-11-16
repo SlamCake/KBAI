@@ -226,6 +226,21 @@ public class SemanticNetState {
         				//if yes, it can be modeled in an inside array. if no, it should be excluded from inside array
         		}
         	}
+        	for(SemanticNetNode snn_1 : this.nodes.values())
+        	{
+
+            	for(SemanticNetNode snn_2 : this.nodes.values())
+            	{
+            		if(!snn_1.getName().equals(snn_2.getName()))
+            		{
+            			if(snn_1.calculateAttributeMatch(snn_2))
+            			{
+            				snn_1.setUnique(false);
+            				snn_2.setUnique(false);
+            			}
+            		}
+            	}
+        	}
     	}
     	
     	//If displacment increased, all nodes surprassed by the displaced node should now be above/left-of displaced node.

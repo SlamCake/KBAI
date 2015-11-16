@@ -157,7 +157,7 @@ public class ProgressionConcept {
 	public void generateConstraints() {
 
 		predictTransformationCount();
-		predictTransformationCompositionByIntersection();
+		predictTransformationComposition();
 		predictTransformationTypeByIntersection();
 		predictTransformationPositionByIntersection();
 		classifyTransformationCompositionBehavior();
@@ -434,7 +434,7 @@ public class ProgressionConcept {
 		}*/
 	}
 	
-	private void predictTransformationCompositionByIntersection() {
+	private void predictTransformationComposition() {
 		// get intersections of all compositions to specify what must exist in the answer set transformations
 		HashSet<String> transCompIntersection = priorTransCompositions.get(0);
 		for(int i = 0; i < priorTransCompositions.size() ; i++)
@@ -450,6 +450,28 @@ public class ProgressionConcept {
 		if(!transCompIntersection.isEmpty())
 		{
 			constraints.put("transCompositionRequirements", transCompIntersection);
+			//predictedTransformations MUST HAVE a transformation of the types in the intersection...
+			//generalize transformation between post trans compositions
+			//if there is only one instance of a type of transformation...generalize these
+			//select the required pairs between posterior transformationst that are most similar.
+			
+			//predictedTransformations.addAll(transCompIntersection);
+		}
+		
+		//difference of prior compositions
+		HashSet<String> transCompPriorDiff_1 = (HashSet<String>) Utilities.difference(priorTransCompositions.get(2), priorTransCompositions.get(0));
+		HashSet<String> transCompPriorDiff_2 = (HashSet<String>) Utilities.difference(priorTransCompositions.get(2), priorTransCompositions.get(1));
+		
+		if(transCompPriorDiff_1.size() == 0 ^ transCompPriorDiff_2.size() == 0)
+		{
+			if(transCompPriorDiff_1.size() == 0)
+			{
+				constraints.put("transCompositionPrediction", postTransCompositions.get(0));
+			}
+			else
+			{
+				constraints.put("transCompositionPrediction", postTransCompositions.get(1));
+			}
 			//predictedTransformations MUST HAVE a transformation of the types in the intersection...
 			//generalize transformation between post trans compositions
 			//if there is only one instance of a type of transformation...generalize these

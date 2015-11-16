@@ -16,6 +16,7 @@ public class SemanticNetNode {
 	private String mapsFrom;
 	private String analogousTo;
 	private String relativePosSignature;
+	private boolean isUnique;
 	private int xCoordinate;
 	private int yCoordinate;
 	private int iCoordinate;
@@ -28,9 +29,12 @@ public class SemanticNetNode {
     private HashMap<String, SemanticNetRelationship> relativeRelationships = new HashMap<String, SemanticNetRelationship>();
     private HashMap<String, SemanticNetRelationship> sourceRelationships = new HashMap<String, SemanticNetRelationship>();
     private HashMap<String, SemanticNetRelationship> destinationRelationships = new HashMap<String, SemanticNetRelationship>();
+    
+	private int[] relativePosSignatureArray;
 
     public SemanticNetNode(RavensObject ro) 
     {
+    	setUnique(true);
     	setName(ro.getName());
     	//setAttributes(ro.getAttributes());
     	setAttributes(ro.getAttributes());
@@ -94,57 +98,71 @@ public class SemanticNetNode {
 		String result = "";
 		//for(String attr : KnowledgeBase.relativeAttributes)
 		//{
+		int[] relPosSigArr = new int[8];
 			if(this.getRelativeAttributes().containsKey("left-of"))
 			{
 				result += String.valueOf(this.getRelativeAttributes().get("left-of").split(",").length)+"_";
+				relPosSigArr[0] = this.getRelativeAttributes().get("left-of").split(",").length;
 			}
 			else
 			{
 				result+="0"+"_";
+				relPosSigArr[0] = 0;
 			}
 
 			if(this.getRelativeAttributes().containsKey("above"))
 			{
 				result += String.valueOf(this.getRelativeAttributes().get("above").split(",").length)+"_";
+				relPosSigArr[1] = this.getRelativeAttributes().get("above").split(",").length;
 			}
 			else
 			{
 				result+="0"+"_";
+				relPosSigArr[1] = 0;
 			}
 			
 			if(this.getRelativeAttributes().containsKey("overlaps"))
 			{
 				result += String.valueOf(this.getRelativeAttributes().get("overlaps").split(",").length)+"_";
+				relPosSigArr[2] = this.getRelativeAttributes().get("overlaps").split(",").length;
 			}
 			else
 			{
 				result+="0"+"_";
+				relPosSigArr[2] = 0;
 			}
 			if(this.getRelativeAttributes().containsKey("inside"))
 			{
 				result += String.valueOf(this.getRelativeAttributes().get("inside").split(",").length)+"_";
+				relPosSigArr[3] = this.getRelativeAttributes().get("inside").split(",").length;
 			}
 			else
 			{
 				result+="0"+"_";
+				relPosSigArr[3] = 0;
 			}
 			if(this.getRelativeAttributes().containsKey("x-aligned"))
 			{
 				result += String.valueOf(this.getRelativeAttributes().get("x-aligned").split(",").length)+"_";
+				relPosSigArr[4] = this.getRelativeAttributes().get("x-aligned").split(",").length;
 			}
 			else
 			{
 				result+="0"+"_";
+				relPosSigArr[4] = 0;
 			}
 			if(this.getRelativeAttributes().containsKey("y-aligned"))
 			{
 				result += String.valueOf(this.getRelativeAttributes().get("y-aligned").split(",").length)+"_";
+				relPosSigArr[5] = this.getRelativeAttributes().get("y-aligned").split(",").length;
 			}
 			else
 			{
 				result+="0"+"_";
+				relPosSigArr[5] = 0;
 			}
 		//}
+		this.setRelativePosSignatureArray(relPosSigArr);
 		this.relativePosSignature = result.substring(0, result.length()-1);
 	}
 	public int calculateRelativePositionSimilarity(String RPSig) {
@@ -325,6 +343,10 @@ public class SemanticNetNode {
 	    differences = Utilities.difference(differences, nNonRelValues);
 	    similarity += similarities.size() - differences.size();
 	    
+	    if(this.calculateAttributeMatch(n) && this.isUnique() && n.isUnique())
+	    {
+	    	similarity+=1;
+	    }
 	    //extra point for perfect matches, prioritize node attributes over position...
 	   /* if(differences.size() == 0)
 	    {
@@ -511,6 +533,22 @@ public class SemanticNetNode {
 			this.getAttributes().put(attr, val);
 		}
 		
+	}
+
+	public boolean isUnique() {
+		return isUnique;
+	}
+
+	public void setUnique(boolean isUnique) {
+		this.isUnique = isUnique;
+	}
+
+	public int[] getRelativePosSignatureArray() {
+		return relativePosSignatureArray;
+	}
+
+	public void setRelativePosSignatureArray(int[] relativePosSignatureArray) {
+		this.relativePosSignatureArray = relativePosSignatureArray;
 	}
 
 

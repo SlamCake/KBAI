@@ -71,31 +71,32 @@ public class AnswerCandidateAppraiser {
 		else
 		{
 
-			ProgressionConcept pc = new ProgressionConcept(sn);
 
-			//ArrayList<ArrayList<SemanticNetRelationship>> possibleTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
-			//ArrayList<ArrayList<SemanticNetRelationship>> assertedTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
-			HashSet<SemanticNetRelationship> priorTrans_1 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("A").values());
-			HashSet<SemanticNetRelationship> postTrans_1= new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("B").values());
+	    	String[] logArgs;
+	    	if(KBAILogging.metrics)
+	    	{
+	        	logArgs = new String[]{"Pattern Determination", "start"};
+	        	KBAILogging.updateLog("performance", logArgs);;
+	        	KBAILogging.updateLog("memory consumption", logArgs);
+	    	}
 
-			//HashSet<SemanticNetRelationship> aSnrSet = new HashSet<SemanticNetRelationship>(answerTransSet.getValue().values());
-			//HashMap<SemanticNetRelationship, SemanticNetRelationship> snrMappings = SemanticNetRelationship.getSnrMappingsFromSets(qSnrSet, aSnrSet);
+			ProgressionConcept pc = buildProgressionConcept();
 
+	    	if(KBAILogging.metrics)
+	    	{
+	        	logArgs = new String[]{"Pattern Determination", "stop"};
+	        	KBAILogging.updateLog("performance", logArgs);
+	        	KBAILogging.updateLog("memory consumption", logArgs);
+	    	}
+	    	
 
-			//pr.defineProgressionConcept(SemanticNetRelationship.getSnrMappingsFromSets(priorTrans_1, postTrans_1));
-
-			HashSet<SemanticNetRelationship> priorTrans_2 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("D").values());
-			HashSet<SemanticNetRelationship> postTrans_2 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("E").values());
-			HashSet<SemanticNetRelationship> priorTrans_3 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("G").values());
-
-
-			pc.getProgressionDataFromRowTransformations(priorTrans_1, postTrans_1);
-			pc.getProgressionDataFromRowTransformations(priorTrans_2, postTrans_2);
-			pc.getProgressionDataFromPriorTransformationSet(priorTrans_3);
-			pc.generateConstraints();
 			HashMap<String, HashSet<String>> constraints = pc.getConstraints();
 			HashSet<SemanticNetRelationship> predictedTransformations = pc.getPredictedTransformations();
-			//HashSet<SemanticNetRelationship> redundantTransformations = pc.getRedundantTransformations();
+			HashSet<SemanticNetRelationship> redundantTransformations = pc.getRedundantTransformations();
+			if(predictedTransformations.size() == 0 && redundantTransformations.size() > 0)
+			{
+				constraints.clear();
+			}
 
 
 			for(Entry<String, HashMap<String, SemanticNetRelationship>> answerTransSet : sn.getTransformationsQA().entrySet()) 
@@ -120,6 +121,30 @@ public class AnswerCandidateAppraiser {
 
 
 
+	private ProgressionConcept buildProgressionConcept() {
+		//ArrayList<ArrayList<SemanticNetRelationship>> possibleTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
+		//ArrayList<ArrayList<SemanticNetRelationship>> assertedTransformationsSequence = new ArrayList<ArrayList<SemanticNetRelationship>>();
+		ProgressionConcept pc = new ProgressionConcept(sn);
+		HashSet<SemanticNetRelationship> priorTrans_1 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("A").values());
+		HashSet<SemanticNetRelationship> postTrans_1= new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("B").values());
+
+		//HashSet<SemanticNetRelationship> aSnrSet = new HashSet<SemanticNetRelationship>(answerTransSet.getValue().values());
+		//HashMap<SemanticNetRelationship, SemanticNetRelationship> snrMappings = SemanticNetRelationship.getSnrMappingsFromSets(qSnrSet, aSnrSet);
+
+
+		//pr.defineProgressionConcept(SemanticNetRelationship.getSnrMappingsFromSets(priorTrans_1, postTrans_1));
+
+		HashSet<SemanticNetRelationship> priorTrans_2 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("D").values());
+		HashSet<SemanticNetRelationship> postTrans_2 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("E").values());
+		HashSet<SemanticNetRelationship> priorTrans_3 = new HashSet<SemanticNetRelationship>(sn.getTransformationsByState().get("G").values());
+
+
+		pc.getProgressionDataFromRowTransformations(priorTrans_1, postTrans_1);
+		pc.getProgressionDataFromRowTransformations(priorTrans_2, postTrans_2);
+		pc.getProgressionDataFromPriorTransformationSet(priorTrans_3);
+		pc.generateConstraints();
+		return pc;
+	}
 	private int appraiseAnswers_2x2()
 	{
 		int answerCandidate = -1;
@@ -265,6 +290,16 @@ public class AnswerCandidateAppraiser {
 				}
 				break;
 			case "transCompositionRequirements":
+				if(answerSNRComposition.containsAll(constraint.getValue()))
+				{
+					answerFitness += 1;
+				}
+				else
+				{
+					answerFitness -= 1;
+				}
+				break;
+			case "transCompositionPrediction":
 				if(answerSNRComposition.containsAll(constraint.getValue()))
 				{
 					answerFitness += 1;

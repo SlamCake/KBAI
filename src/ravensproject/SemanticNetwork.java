@@ -44,7 +44,7 @@ public class SemanticNetwork {
 		return stateMap.get(this.getStateByName(KnowledgeBase.sequence2NameMap.get(sequence)));
 	}
 	public SemanticNetState getStateByPosition(int row, int column) {
-		return this.getStateByName(KnowledgeBase.sequence2NameMap.get(row*column+column));
+		return this.getStateByName(KnowledgeBase.sequence2NameMap.get((row*this.columns)-(this.columns-1)+(column-1)));
 	}
 	
 	public SemanticNetNode getNodeByName(String stateName, String nodeName) {
@@ -103,7 +103,50 @@ public class SemanticNetwork {
     private ArrayList<SemanticNetState> questionStates = new ArrayList<SemanticNetState>();
     
     public SemanticNetwork(RavensProblem problem) {
-    
+    	
+    	if(problem.hasVerbal())
+    	{
+    		populateNetworkFromVerbal(problem);
+    	}
+    	else
+    	{
+    		populateNetworkFromVisual(problem);
+    	}
+    	
+    }
+    /*
+    public addNode() {
+        //this.nodes.add();
+    }
+    public addRelationship() {
+        //this.nodes.add();
+    }
+    public removeNode() {
+        //this.nodes.add();
+    }
+    public removeRelationship() {
+        //this.nodes.add();
+    }
+    public inferIntraNetworkRelationships() {
+        //this.nodes.add();
+    }
+    public inferTransformations() {
+        //this.nodes.add();
+    }
+    */
+
+	private void populateNetworkFromVisual(RavensProblem problem) {
+        for (RavensFigure rf: problem.getFigures().values())
+        {
+        	RPMImageScanner.processFigure(rf);
+        	SemanticNetState tempState = new SemanticNetState(rf);
+        	states.add(tempState);
+        	stateMap.put(tempState.getName(), tempState);
+        }
+		
+	}
+
+	private void populateNetworkFromVerbal(RavensProblem problem) {
     	/*RavensFigure rfTemp;
     	RavensObject roTemp;
     	RavensFigure attrMapTemp;
@@ -220,28 +263,9 @@ public class SemanticNetwork {
             	
             	
             	
-            	
-    }
-    /*
-    public addNode() {
-        //this.nodes.add();
-    }
-    public addRelationship() {
-        //this.nodes.add();
-    }
-    public removeNode() {
-        //this.nodes.add();
-    }
-    public removeRelationship() {
-        //this.nodes.add();
-    }
-    public inferIntraNetworkRelationships() {
-        //this.nodes.add();
-    }
-    public inferTransformations() {
-        //this.nodes.add();
-    }
-    */
+            
+		
+	}
 
 	public String getRPMType() {
 		return RPMType;

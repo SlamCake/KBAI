@@ -15,7 +15,7 @@ import java.util.Stack;
 public class KBAILogging {
 	public static boolean debug = false;
 	public static boolean stats = false;
-	public static boolean metrics = false;
+	public static boolean metrics = true;
 	public static long startingMemory;
     public static Stack priorMemory = new Stack();
    // public static Stack priorMemoryData = new Stack();

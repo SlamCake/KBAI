@@ -274,18 +274,50 @@ public class RelationshipReasoner {
 		{
 			if (attr.equals("left-of")) {
 				transformationSpecification = "left-of";
+				if(node1.getRelativePosSignatureArray()[0] > node2.getRelativePosSignatureArray()[0])
+				{
+					transformationSpecification +="_!increase";
+				}
+				else
+				{
+					transformationSpecification +="_increase";
+				}
 			}
 
 			if (attr.equals("above")) {
 				transformationSpecification = "above";
+				if(node1.getRelativePosSignatureArray()[1] > node2.getRelativePosSignatureArray()[1])
+				{
+					transformationSpecification +="_!increase";
+				}
+				else
+				{
+					transformationSpecification +="_increase";
+				}
 			}
 
 			if (attr.equals("overlaps")) {
 				transformationSpecification = "overlaps";
+				if(node1.getRelativePosSignatureArray()[2] > node2.getRelativePosSignatureArray()[2])
+				{
+					transformationSpecification +="_!increase";
+				}
+				else
+				{
+					transformationSpecification +="_increase";
+				}
 			}
 
 			if (attr.equals("inside")) {
 				transformationSpecification = "inside";
+				if(node1.getRelativePosSignatureArray()[3] > node2.getRelativePosSignatureArray()[3])
+				{
+					transformationSpecification +="_!increase";
+				}
+				else
+				{
+					transformationSpecification +="_increase";
+				}
 			}
 
 			if (attr.equals("delete")) {
@@ -437,64 +469,78 @@ public class RelationshipReasoner {
 		{
 			if(node1.getAttributes().containsKey(attr))
 			{
-				int difference;
-				switch (attr) {
-				case "width":
-					difference = Math.abs((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")));
-							if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")))
-							{
-								transformationSpecification = "width_increase_"+String.valueOf(difference);
-							}
-							else if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")))
-							{
-								transformationSpecification = "width_!increase_"+String.valueOf(difference);
-							}
-					break;
-				case "height": 
-					difference = Math.abs((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")));
-							if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")))
-							{
-								transformationSpecification = "height_increase_"+String.valueOf(difference);
-							}
-							else if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")))
-							{
-								transformationSpecification = "height_!increase_"+String.valueOf(difference);
-							}
-					break;
-				default:
-					transformationSpecification = "!"+attr;
-					break;
+				if(KnowledgeBase.attributeMetaDataMap.get(attr).isRelative())
+				{
+					transformationSpecification = attr+"_!increase";
+				}
+				else
+				{
+					int difference;
+					switch (attr) {
+					case "width":
+						difference = Math.abs((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")));
+						if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")))
+						{
+							transformationSpecification = "width_increase_"+String.valueOf(difference);
+						}
+						else if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("width")))
+						{
+							transformationSpecification = "width_!increase_"+String.valueOf(difference);
+						}
+						break;
+					case "height": 
+						difference = Math.abs((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")));
+						if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")))
+						{
+							transformationSpecification = "height_increase_"+String.valueOf(difference);
+						}
+						else if((int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("height")))
+						{
+							transformationSpecification = "height_!increase_"+String.valueOf(difference);
+						}
+						break;
+					default:
+						transformationSpecification = "!"+attr;
+						break;
+					}
 				}
 			}
 			else if(node2.getAttributes().containsKey(attr))
 			{
-				int difference;
-				switch (attr) {
-				case "width":
-					difference = Math.abs((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")));
-							if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")))
-							{
-								transformationSpecification = "width_!increase_"+String.valueOf(difference);
-							}
-							else if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")))
-							{
-								transformationSpecification = "width_increase_"+String.valueOf(difference);
-							}
-					break;
-				case "height": 
-					difference = Math.abs((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")));
-							if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")))
-							{
-								transformationSpecification = "height_!increase_"+String.valueOf(difference);
-							}
-							else if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")))
-							{
-								transformationSpecification = "height_increase_"+String.valueOf(difference);
-							}
-					break;
-				default:
-					transformationSpecification = attr;
-					break;
+				if(KnowledgeBase.attributeMetaDataMap.get(attr).isRelative())
+				{
+					transformationSpecification = attr+"_increase";
+				}
+				else
+				{
+					int difference;
+					switch (attr) {
+					case "width":
+						difference = Math.abs((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")));
+						if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")))
+						{
+							transformationSpecification = "width_!increase_"+String.valueOf(difference);
+						}
+						else if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("width")))
+						{
+							transformationSpecification = "width_increase_"+String.valueOf(difference);
+						}
+						break;
+					case "height": 
+						difference = Math.abs((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) - (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")));
+						if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) > (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")))
+						{
+							transformationSpecification = "height_!increase_"+String.valueOf(difference);
+						}
+						else if((int)KnowledgeBase.sizeMap.get(node1.getAttributes().get("size")) < (int)KnowledgeBase.sizeMap.get(node2.getAttributes().get("height")))
+						{
+							transformationSpecification = "height_increase_"+String.valueOf(difference);
+						}
+						break;
+					default:
+						transformationSpecification = attr;
+						break;
+					}
 				}
 			}
 			else
